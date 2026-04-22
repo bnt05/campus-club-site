@@ -1,0 +1,208 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}创建活动 - 校园社团网{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-plus-circle"></i> 创建新活动</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="event-form">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <div>{{ field }}: {{ error }}</div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="id_title" class="form-label">活动标题 *</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <div class="text-danger small">{{ form.title.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">活动描述 *</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="id_start_date" class="form-label">开始日期 *</label>
+                                {{ form.start_date }}
+                                {% if form.start_date.errors %}
+                                <div class="text-danger small">{{ form.start_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_end_date" class="form-label">结束日期</label>
+                                {{ form.end_date }}
+                                {% if form.end_date.errors %}
+                                <div class="text-danger small">{{ form.end_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="id_location" class="form-label">活动地点</label>
+                                {{ form.location }}
+                                {% if form.location.errors %}
+                                <div class="text-danger small">{{ form.location.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_max_participants" class="form-label">最大参与人数</label>
+                                {{ form.max_participants }}
+                                {% if form.max_participants.errors %}
+                                <div class="text-danger small">{{ form.max_participants.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_category" class="form-label">活动分类</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                            <div class="text-danger small">{{ form.category.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_scope" class="form-label">活动范围 *</label>
+                            {{ form.scope }}
+                            {% if form.scope.errors %}
+                            <div class="text-danger small">{{ form.scope.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3" id="club-field-container" style="display: none;">
+                            <label for="id_club" class="form-label">主办社团 *</label>
+                            {{ form.club }}
+                            {% if form.club.errors %}
+                            <div class="text-danger small">{{ form.club.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">请选择您创建的社团来发布活动</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_poster" class="form-label">活动海报</label>
+                            {{ form.poster }}
+                            {% if form.poster.errors %}
+                            <div class="text-danger small">{{ form.poster.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_purpose" class="form-label">活动目的</label>
+                            {{ form.purpose }}
+                            {% if form.purpose.errors %}
+                            <div class="text-danger small">{{ form.purpose.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_flow" class="form-label">活动流程</label>
+                            {{ form.flow }}
+                            {% if form.flow.errors %}
+                            <div class="text-danger small">{{ form.flow.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_precautions" class="form-label">注意事项</label>
+                            {{ form.precautions }}
+                            {% if form.precautions.errors %}
+                            <div class="text-danger small">{{ form.precautions.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ form.is_public }}
+                            <label class="form-check-label" for="id_is_public">
+                                公开活动（所有人可见）
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'events_list' %}" class="btn btn-outline-secondary">取消</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> 创建活动
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scopeSelect = document.getElementById('id_scope');
+    const clubFieldContainer = document.getElementById('club-field-container');
+    
+    function toggleClubField() {
+        if (scopeSelect.value === 'club_activity') {
+            clubFieldContainer.style.display = 'block';
+        } else {
+            clubFieldContainer.style.display = 'none';
+            // Clear the club field when hidden
+            const clubSelect = document.getElementById('id_club');
+            if (clubSelect) {
+                clubSelect.value = '';
+            }
+        }
+    }
+    
+    // Initial toggle
+    toggleClubField();
+    
+    // Toggle on change
+    scopeSelect.addEventListener('change', toggleClubField);
+});
+</script>
+
+<style>
+    .form-control, .form-select {
+        border-radius: 8px;
+    }
+    .card {
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .card-header {
+        border-radius: 16px 16px 0 0 !important;
+    }
+</style>
+{% endblock %}

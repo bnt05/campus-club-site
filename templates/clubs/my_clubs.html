@@ -1,0 +1,58 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}我的社团 - 校园社团网{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-people"></i> 我的社团</h2>
+        <a href="{% url 'club_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> 创建社团
+        </a>
+    </div>
+
+    {% if clubs %}
+    <div class="row">
+        {% for club in clubs %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card club-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-3">
+                        {% if club.poster %}
+                        <img src="{{ club.poster.url }}" alt="{{ club.name }}" class="club-logo me-3">
+                        {% else %}
+                        <div class="bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;">
+                            <i class="bi bi-people text-white" style="font-size:1.5rem;"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h5 class="card-title mb-1">{{ club.name }}</h5>
+                            <span class="badge category-badge">{{ club.get_category_display }}</span>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted">{{ club.description|truncatewords:20 }}</p>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-people"></i> {{ club.members.count }} 成员
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'club_detail' club.id %}" class="btn btn-outline-primary btn-sm">查看详情</a>
+                    {% if club.creator == user or club.is_admin %}
+                    <a href="{% url 'club_edit' club.id %}" class="btn btn-outline-warning btn-sm">编辑</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-people" style="font-size: 4rem; color: #ccc;"></i>
+        <p class="text-muted mt-3">你还没有加入任何社团</p>
+        <a href="{% url 'index' %}" class="btn btn-primary">浏览社团</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

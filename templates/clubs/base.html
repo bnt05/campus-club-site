@@ -1,0 +1,560 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}智枢青寰{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1E3A5F;
+            --secondary-color: #3B82F6;
+            --accent-color: #F59E0B;
+        }
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        /* 导航栏样式 */
+        .navbar-custom {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            padding: 12px 0;
+        }
+        .navbar-brand-custom {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white !important;
+            text-decoration: none;
+            margin-right: 30px;
+        }
+        .nav-link-custom {
+            color: rgba(255,255,255,0.9) !important;
+            font-size: 1rem;
+            padding: 8px 16px !important;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+        .nav-link-custom:hover {
+            color: white !important;
+            background: rgba(255,255,255,0.2);
+        }
+        .nav-link-active {
+            background: rgba(255,255,255,0.3) !important;
+            color: white !important;
+        }
+        /* 登录按钮 */
+        .btn-login {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .btn-login:hover {
+            background: #f0f0f0;
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        .btn-register {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .btn-register:hover {
+            background: #d97706;
+            color: white;
+        }
+        /* 用户菜单 */
+        .user-menu {
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* 页面标题区域 */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .page-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        /* 轮播图样式 */
+        .carousel-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 400px;
+            position: relative;
+        }
+        .carousel-inner {
+            height: 100%;
+        }
+        .carousel-item {
+            height: 100%;
+        }
+        .carousel-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .carousel-caption {
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+        }
+        .carousel-control {
+            width: 50px;
+            height: 50px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .carousel-control:hover {
+            opacity: 1;
+            background: rgba(0,0,0,0.7);
+        }
+        /* 右侧卡片 */
+        .side-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            overflow: hidden;
+            height: 123px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .side-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .side-card-content {
+            text-align: center;
+            color: white;
+        }
+        .side-card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .side-card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        /* 热门社团卡片 */
+        .club-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            overflow: hidden;
+            height: 100%;
+        }
+        .club-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .club-card-img {
+            height: 150px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .club-card-body {
+            padding: 15px;
+        }
+        .club-card-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .club-card-meta {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        /* AI助手按钮 */
+        .ai-assistant-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary-color), #8B5CF6);
+            border: none;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        .ai-assistant-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+        /* AI对话框 */
+        .ai-chat-modal {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            max-height: 500px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .ai-chat-modal.show {
+            display: flex;
+        }
+        .ai-chat-header {
+            background: linear-gradient(135deg, var(--secondary-color), #8B5CF6);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ai-chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            max-height: 350px;
+        }
+        .ai-chat-footer {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        .ai-message {
+            margin-bottom: 15px;
+        }
+        .ai-message.bot {
+            text-align: left;
+        }
+        .ai-message.user {
+            text-align: right;
+        }
+        .ai-message-content {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+        }
+        .ai-message.bot .ai-message-content {
+            background: #f0f0f0;
+            border-bottom-left-radius: 5px;
+        }
+        .ai-message.user .ai-message-content {
+            background: var(--secondary-color);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        /* Footer */
+        .footer {
+            background: var(--primary-color);
+            color: white;
+            padding: 30px 0;
+            margin-top: 50px;
+        }
+        
+        /* 全局返回按钮 */
+        .global-back-btn {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 999;
+            transition: all 0.3s;
+            color: #666;
+            font-size: 1.2rem;
+        }
+        .global-back-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            color: #1E3A5F;
+        }
+        .global-back-btn:empty {
+            display: none;
+        }
+        
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand-custom" href="{% url 'home' %}">
+                <i class="bi bi-house-heart"></i> 智枢青寰
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom {% if request.path == '/' %}nav-link-active{% endif %}" href="{% url 'home' %}">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom {% if '/clubs' in request.path %}nav-link-active{% endif %}" href="{% url 'index' %}">社团列表</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom {% if '/events' in request.path %}nav-link-active{% endif %}" href="{% url 'events_list' %}">校园活动</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom {% if '/encyclopedia' in request.path %}nav-link-active{% endif %}" href="{% url 'encyclopedia_home' %}">活动百科</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> 个人中心
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person"></i> 个人主页</a></li>
+                            <li><a class="dropdown-item" href="{% url 'index' %}"><i class="bi bi-people"></i> 我的社团</a></li>
+                            <li><a class="dropdown-item" href="{% url 'my_events' %}"><i class="bi bi-calendar-event"></i> 我的活动</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> 退出</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" href="{% url 'login' %}">
+                            <i class="bi bi-box-arrow-in-right"></i> 登录
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-register ms-2" href="{% url 'register' %}">注册</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 全局返回按钮 -->
+    <button class="global-back-btn" id="globalBackBtn" onclick="handleGlobalBack()" title="返回上一页">
+        <i class="bi bi-arrow-left"></i>
+    </button>
+
+    <!-- 消息提示 -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 主内容 -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-house-heart"></i> 智枢青寰</h5>
+                    <p class="opacity-75">高校社团智慧互动聚合平台</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="opacity-75">&copy; 2024 智枢青寰. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AI助手按钮 -->
+    <button class="ai-assistant-btn" onclick="toggleAiChat()" title="智能助手">
+        <i class="bi bi-robot"></i>
+    </button>
+
+    <!-- AI对话框 -->
+    <div class="ai-chat-modal" id="aiChatModal">
+        <div class="ai-chat-header">
+            <div>
+                <strong><i class="bi bi-robot"></i> 智能助手</strong>
+                <small class="d-block opacity-75">随时为您解答</small>
+            </div>
+            <button type="button" class="btn-close btn-close-white" onclick="toggleAiChat()"></button>
+        </div>
+        <div class="ai-chat-body" id="aiChatBody">
+            <div class="ai-message bot">
+                <div class="ai-message-content">
+                    你好！我是智枢青寰的智能助手，有什么可以帮你的吗？
+                </div>
+            </div>
+        </div>
+        <div class="ai-chat-footer">
+            <input type="text" class="form-control" id="aiInput" placeholder="输入问题..." onkeypress="if(event.key==='Enter')sendAiMessage()">
+            <button class="btn btn-primary" onclick="sendAiMessage()"><i class="bi bi-send"></i></button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let aiChatOpen = false;
+        
+        function toggleAiChat() {
+            aiChatOpen = !aiChatOpen;
+            const modal = document.getElementById('aiChatModal');
+            if (aiChatOpen) {
+                modal.classList.add('show');
+            } else {
+                modal.classList.remove('show');
+            }
+        }
+        
+        function sendAiMessage() {
+            const input = document.getElementById('aiInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const chatBody = document.getElementById('aiChatBody');
+            
+            // 添加用户消息
+            chatBody.innerHTML += `
+                <div class="ai-message user">
+                    <div class="ai-message-content">${escapeHtml(message)}</div>
+                </div>
+            `;
+            
+            input.value = '';
+            chatBody.scrollTop = chatBody.scrollHeight;
+            
+            // 发送API请求
+            fetch('{% url "api_assistant" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatBody.innerHTML += `
+                    <div class="ai-message bot">
+                        <div class="ai-message-content">${escapeHtml(data.reply || '抱歉，我现在无法回答。')}</div>
+                    </div>
+                `;
+                chatBody.scrollTop = chatBody.scrollHeight;
+            })
+            .catch(error => {
+                chatBody.innerHTML += `
+                    <div class="ai-message bot">
+                        <div class="ai-message-content">抱歉，发生了错误。请稍后再试。</div>
+                    </div>
+                `;
+                chatBody.scrollTop = chatBody.scrollHeight;
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 全局返回按钮逻辑
+        function initGlobalBackBtn() {
+            const backBtn = document.getElementById('globalBackBtn');
+            if (!backBtn) return;
+            
+            // 检查页面上是否有内置的返回按钮区域（面包屑或返回区域）
+            const hasBuiltInBack = document.querySelector('.breadcrumb-nav') || 
+                                   document.querySelector('.back-section') || 
+                                   document.querySelector('.btn-back');
+            
+            // 如果有内置返回按钮，隐藏全局返回按钮
+            if (hasBuiltInBack) {
+                backBtn.style.display = 'none';
+            }
+            
+            // 检查是否有浏览器历史可以返回
+            if (window.history.length <= 1) {
+                backBtn.style.display = 'none';
+            }
+        }
+        
+        function handleGlobalBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // 如果没有历史记录，跳转到首页
+                window.location.href = '/';
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initGlobalBackBtn);
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

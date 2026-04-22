@@ -1,0 +1,98 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}我的活动 - 校园社团网{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-calendar-event"></i> 我的活动</h2>
+        <a href="{% url 'event_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> 创建活动
+        </a>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="joined-tab" data-bs-toggle="tab" data-bs-target="#joined" type="button">
+                我参与的活动
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="managed-tab" data-bs-toggle="tab" data-bs-target="#managed" type="button">
+                我发布的活动
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- 我参与的活动 -->
+        <div class="tab-pane fade show active" id="joined">
+            {% if joined_events %}
+            <div class="row">
+                {% for event in joined_events %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card event-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ event.title }}</h5>
+                            <p class="text-muted">{{ event.description|truncatewords:20 }}</p>
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> {{ event.start_date|date:"Y-m-d" }}
+                                </small>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt"></i> {{ event.location|default:"待定" }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{% url 'event_detail' event.id %}" class="btn btn-outline-primary btn-sm">查看详情</a>
+                            <a href="{% url 'event_leave' event.id %}" class="btn btn-outline-danger btn-sm">取消参与</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-calendar-x" style="font-size: 4rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">你还没有参与任何活动</p>
+                <a href="{% url 'events_list' %}" class="btn btn-primary">浏览活动</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 我发布的活动 -->
+        <div class="tab-pane fade" id="managed">
+            {% if published_events %}
+            <div class="list-group">
+                {% for event in published_events %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ event.title }}</strong>
+                        <small class="text-muted ms-2">
+                            <i class="bi bi-calendar"></i> {{ event.start_date|date:"Y-m-d" }}
+                        </small>
+                        <small class="text-muted ms-2">
+                            <i class="bi bi-people"></i> {{ event.participant_count|default:0 }} 人参与
+                        </small>
+                    </div>
+                    <div>
+                        <a href="{% url 'event_edit' event.id %}" class="btn btn-sm btn-outline-primary">编辑</a>
+                        <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-secondary">查看</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-calendar-x" style="font-size: 4rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">你还没有发布任何活动</p>
+                <a href="{% url 'event_create' %}" class="btn btn-primary">发布活动</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

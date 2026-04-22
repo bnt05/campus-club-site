@@ -1,0 +1,832 @@
+{% extends 'clubs/base.html' %}
+{% load static %}
+
+{% block title %}AI助手 - 校园社团{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #29B6F6;
+        --primary-light: #4FC3F7;
+        --primary-dark: #0288D1;
+        --secondary: #4DB6AC;
+        --accent: #81C784;
+        --gradient: linear-gradient(135deg, #29B6F6 0%, #4DB6AC 100%);
+        --gradient-light: linear-gradient(135deg, #4FC3F7 0%, #81C784 100%);
+        --bg-light: #F5F9FC;
+        --bg-card: #FFFFFF;
+        --bg-chat: #EEF6FB;
+        --text-primary: #2C3E50;
+        --text-secondary: #5D6D7E;
+        --text-muted: #95A5B6;
+        --border-color: #E1F0F8;
+        --shadow-sm: 0 2px 8px rgba(41, 182, 246, 0.08);
+        --shadow-md: 0 4px 16px rgba(41, 182, 246, 0.12);
+        --shadow-lg: 0 8px 32px rgba(41, 182, 246, 0.15);
+        --radius: 20px;
+        --radius-sm: 12px;
+    }
+
+    body {
+        background: var(--bg-light);
+    }
+
+    .ai-page {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 20px 50px;
+    }
+
+    /* Header */
+    .ai-header {
+        text-align: center;
+        padding: 50px 0 35px;
+    }
+
+    .ai-header .icon-wrapper {
+        width: 90px;
+        height: 90px;
+        background: var(--gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        box-shadow: var(--shadow-lg);
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+
+    .ai-header .icon-wrapper span {
+        font-size: 2.8rem;
+    }
+
+    .ai-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+        letter-spacing: -0.5px;
+    }
+
+    .ai-header p {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+    }
+
+    /* Feature Cards */
+    .features {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .feature-card {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 24px 18px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+        border-color: var(--primary-light);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-4px);
+    }
+
+    .feature-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .feature-card .icon {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #E3F2FD 0%, #F1F8E9 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 14px;
+        font-size: 1.6rem;
+    }
+
+    .feature-card h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .feature-card p {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    /* Chat Container */
+    .chat-container {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+
+    /* Chat Header */
+    .chat-header {
+        background: var(--gradient);
+        padding: 22px 26px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .chat-avatar {
+        width: 52px;
+        height: 52px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .chat-info {
+        flex: 1;
+    }
+
+    .chat-info h3 {
+        color: white;
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 600;
+    }
+
+    .chat-info p {
+        color: rgba(255,255,255,0.9);
+        margin: 4px 0 0;
+        font-size: 0.85rem;
+    }
+
+    .mbti-badge {
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        padding: 8px 16px;
+        border-radius: 20px;
+        color: white;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Messages Area */
+    .chat-messages {
+        height: 420px;
+        overflow-y: auto;
+        padding: 28px;
+        background: var(--bg-chat);
+    }
+
+    .message {
+        display: flex;
+        margin-bottom: 20px;
+        animation: messageIn 0.4s ease;
+    }
+
+    @keyframes messageIn {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message.user {
+        flex-direction: row-reverse;
+    }
+
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .message.user .message-avatar {
+        background: var(--gradient);
+        color: white;
+    }
+
+    .message.assistant .message-avatar {
+        background: white;
+        border: 2px solid var(--border-color);
+    }
+
+    .message-content {
+        max-width: 72%;
+        margin: 0 14px;
+    }
+
+    .message.user .message-content {
+        text-align: right;
+    }
+
+    .message-bubble {
+        padding: 14px 18px;
+        border-radius: 18px;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .message.user .message-bubble {
+        background: var(--gradient);
+        color: white;
+        border-bottom-right-radius: 6px;
+    }
+    
+    .message.assistant .message-bubble {
+        background: white;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        border-bottom-left-radius: 6px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .message-bubble ul {
+        margin: 8px 0;
+        padding-left: 18px;
+    }
+    
+    .message-bubble li {
+        margin: 5px 0;
+        line-height: 1.5;
+    }
+    
+    .message-bubble h2, .message-bubble h3, .message-bubble h4 {
+        margin: 10px 0 6px;
+        color: inherit;
+    }
+
+    .message.user .message-bubble {
+        background: var(--gradient);
+        color: white;
+        border-bottom-right-radius: 6px;
+    }
+
+    .message.assistant .message-bubble {
+        background: white;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        border-bottom-left-radius: 6px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 6px;
+        padding: 0 4px;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        padding: 16px 20px;
+        background: white;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .quick-btn {
+        background: linear-gradient(135deg, #E3F2FD 0%, #F1F8E9 100%);
+        border: 1px solid var(--border-color);
+        padding: 10px 18px;
+        border-radius: 24px;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.25s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .quick-btn:hover {
+        background: var(--gradient);
+        color: white;
+        border-color: transparent;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .quick-btn .icon {
+        font-size: 1rem;
+    }
+
+    /* Input Area */
+    .chat-input-area {
+        padding: 20px 24px;
+        background: white;
+        display: flex;
+        gap: 14px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .chat-input {
+        flex: 1;
+        padding: 16px 22px;
+        border: 2px solid var(--border-color);
+        border-radius: 28px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: all 0.3s;
+        background: var(--bg-light);
+    }
+
+    .chat-input:focus {
+        border-color: var(--primary-light);
+        background: white;
+        box-shadow: 0 0 0 4px rgba(41, 182, 246, 0.1);
+    }
+
+    .chat-send-btn {
+        background: var(--gradient);
+        color: white;
+        border: none;
+        padding: 16px 30px;
+        border-radius: 28px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .chat-send-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .chat-send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Typing Indicator */
+    .typing-indicator {
+        display: none;
+        padding: 20px 28px;
+        background: var(--bg-chat);
+    }
+
+    .typing-indicator.active {
+        display: block;
+    }
+
+    .typing-dots {
+        display: inline-flex;
+        gap: 5px;
+        padding: 12px 20px;
+        background: white;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .typing-dots span {
+        width: 9px;
+        height: 9px;
+        background: var(--primary);
+        border-radius: 50%;
+        animation: typingBounce 1.4s infinite;
+    }
+
+    .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes typingBounce {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-8px); }
+    }
+
+    /* Login Prompt */
+    .login-prompt {
+        text-align: center;
+        padding: 80px 40px;
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .login-icon {
+        width: 90px;
+        height: 90px;
+        background: var(--gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 28px;
+    }
+
+    .login-prompt h2 {
+        color: var(--text-primary);
+        margin-bottom: 14px;
+    }
+
+    .login-prompt p {
+        color: var(--text-secondary);
+        margin-bottom: 28px;
+    }
+
+    .login-btn {
+        display: inline-block;
+        background: var(--gradient);
+        color: white;
+        padding: 16px 40px;
+        border-radius: 28px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+        box-shadow: var(--shadow-md);
+    }
+
+    .login-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+        color: white;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .features {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .message-content {
+            max-width: 82%;
+        }
+        
+        .chat-messages {
+            height: 360px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .features {
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .feature-card {
+            padding: 18px 12px;
+        }
+        
+        .feature-card .icon {
+            width: 48px;
+            height: 48px;
+        }
+        
+        .chat-input-area {
+            flex-direction: column;
+        }
+        
+        .chat-send-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .ai-header {
+            padding: 30px 0 24px;
+        }
+        
+        .ai-header h1 {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-page">
+    <div class="ai-header">
+        <div class="icon-wrapper">
+            <span>🤖</span>
+        </div>
+        <h1>AI智能助手</h1>
+        <p>你的校园社团专属向导，帮你探索、推荐、解答</p>
+    </div>
+    
+    {% if user.is_authenticated %}
+    <div class="features">
+        <div class="feature-card">
+            <div class="icon">🎯</div>
+            <h3>精准推荐</h3>
+            <p>根据你的兴趣匹配社团</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">📅</div>
+            <h3>活动查询</h3>
+            <p>活动时间地点一网打尽</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">💬</div>
+            <h3>智能问答</h3>
+            <p>解答各类社团相关问题</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🧪</div>
+            <h3>MBTI测试</h3>
+            <p>发现你的性格特点</p>
+        </div>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="chat-avatar">🤖</div>
+            <div class="chat-info">
+                <h3>小C</h3>
+                <p>校园社团智能助手 · 在线</p>
+            </div>
+            <div class="mbti-badge">
+                <span>🌟</span>
+                MBTI: {{ user.profile.mbti|default:"未测评" }}
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        你好，{{ user.username }}！我是你的社团小助手。<br><br>
+                        今天想探索什么？<br>
+                        ✨ 推荐适合你的社团和活动<br>
+                        📋 解答社团与活动相关问题<br>
+                        🔍 查找活动时间、地点与报名信息<br>
+                        🧪 提供 MBTI 测试引导与结果建议<br><br>
+                        随时向我发问即可。
+                    </div>
+                    <div class="message-time">刚刚</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        
+        <div class="quick-actions">
+            <button class="quick-btn" onclick="sendQuickMessage('帮我推荐一个社团')">
+                <span class="icon">🎯</span>
+                推荐社团
+            </button>
+            <button class="quick-btn" onclick="sendQuickMessage('最近有什么活动？')">
+                <span class="icon">📅</span>
+                查看活动
+            </button>
+            <button class="quick-btn" onclick="sendQuickMessage('我适合加入什么社团？')">
+                <span class="icon">💡</span>
+                兴趣分析
+            </button>
+            <button class="quick-btn" onclick="location.href='/ai/mbti/'">
+                <span class="icon">🧪</span>
+                MBTI测试
+            </button>
+        </div>
+        
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chatInput" placeholder="输入你的问题..." onkeypress="handleKeyPress(event)">
+            <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">
+                发送
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="login-prompt">
+        <div class="login-icon">🔐</div>
+        <h2>请先登录</h2>
+        <p>登录后即可享受AI智能助手服务，获得个性化推荐</p>
+        <a href="{% url 'login' %}?next={% url 'ai_assistant' %}" class="login-btn">立即登录</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingIndicator = document.getElementById('typingIndicator');
+    
+    let conversationHistory = [];
+    
+    function handleKeyPress(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    }
+    
+    function addMessage(content, role) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${role}`;
+        
+        const time = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+        const avatar = role === 'user' ? '👤' : '🤖';
+        
+        // 格式化AI回复内容
+        let formattedContent = formatAIResponse(content);
+        
+        msgDiv.innerHTML = `
+            <div class="message-avatar">${avatar}</div>
+            <div class="message-content">
+                <div class="message-bubble">${formattedContent}</div>
+                <div class="message-time">${time}</div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // 格式化AI回复内容
+    function formatAIResponse(text) {
+        if (!text) return '';
+        
+        // 1. 先进行HTML转义，防止XSS
+        let formatted = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        
+        // 2. 转换Markdown格式
+        // 标题
+        formatted = formatted.replace(/^### (.+)$/gm, '<h4 style="margin: 8px 0 4px; font-size: 13px; font-weight: 600;">$1</h4>');
+        formatted = formatted.replace(/^## (.+)$/gm, '<h3 style="margin: 10px 0 5px; font-size: 14px; font-weight: 600;">$1</h3>');
+        formatted = formatted.replace(/^# (.+)$/gm, '<h2 style="margin: 12px 0 6px; font-size: 15px; font-weight: 600;">$1</h2>');
+        
+        // 3. 粗体和斜体
+        formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        
+        // 4. 处理列表项
+        const lines = formatted.split('\n');
+        let inList = false;
+        let resultLines = [];
+        
+        for (let line of lines) {
+            const listMatch = line.match(/^(\s*)([•\-\*]|\d+\.)\s+(.+)$/);
+            
+            if (listMatch) {
+                if (!inList) {
+                    resultLines.push('<ul style="margin: 8px 0; padding-left: 18px;">');
+                    inList = true;
+                }
+                resultLines.push(`<li style="margin: 4px 0;">${listMatch[3]}</li>`);
+            } else {
+                if (inList) {
+                    resultLines.push('</ul>');
+                    inList = false;
+                }
+                resultLines.push(line);
+            }
+        }
+        
+        if (inList) {
+            resultLines.push('</ul>');
+        }
+        formatted = resultLines.join('\n');
+        
+        // 5. 清理多余的空行
+        formatted = formatted.replace(/\n{3,}/g, '\n\n');
+        
+        // 6. 将换行转换为<br>
+        formatted = formatted.replace(/\n/g, '<br>');
+        
+        // 7. 移除可能残留的列表标签错误
+        formatted = formatted.replace(/<\/ul>\s*<ul>/g, '');
+        
+        return formatted;
+    }
+    
+    function setTyping(show) {
+        typingIndicator.classList.toggle('active', show);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function setInputEnabled(enabled) {
+        chatInput.disabled = !enabled;
+        sendBtn.disabled = !enabled;
+    }
+    
+    async function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+        
+        addMessage(message, 'user');
+        conversationHistory.push({role: 'user', content: message});
+        chatInput.value = '';
+        
+        setTyping(true);
+        setInputEnabled(false);
+        
+        try {
+            const response = await fetch('/api/assistant/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    message: message,
+                    history: conversationHistory
+                })
+            });
+            
+            const data = await response.json();
+            setTyping(false);
+            
+            if (data.reply) {
+                addMessage(data.reply, 'assistant');
+                conversationHistory.push({role: 'assistant', content: data.reply});
+            } else if (data.error) {
+                addMessage('抱歉，' + data.error, 'assistant');
+            }
+        } catch (error) {
+            setTyping(false);
+            addMessage('抱歉，网络出现了问题，请稍后再试。', 'assistant');
+        }
+        
+        setInputEnabled(true);
+        chatInput.focus();
+    }
+    
+    function sendQuickMessage(message) {
+        chatInput.value = message;
+        sendMessage();
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

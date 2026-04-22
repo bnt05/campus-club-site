@@ -1,0 +1,638 @@
+<template>
+  <div class="recommendation-page">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <h1>🧠 智能社团推荐</h1>
+      <p class="subtitle">基于你的兴趣和偏好，为你推荐最适合的社团</p>
+    </div>
+
+    <!-- 用户档案卡片 -->
+    <div class="profile-card" v-if="hasProfile">
+      <div class="profile-info">
+        <div class="avatar">
+          <img v-if="profile.avatar" :src="profile.avatar" alt="avatar">
+          <span v-else>{{ userName[0] }}</span>
+        </div>
+        <div class="info">
+          <h3>{{ userName }}</h3>
+          <p>{{ profile.grade }} · {{ profile.major }} · {{ profile.academy }}</p>
+        </div>
+      </div>
+      <div class="profile-tags">
+        <el-tag v-for="interest in profile.interests" :key="interest.tag_id" size="small">
+          {{ interest.tag_name }}
+        </el-tag>
+      </div>
+      <el-button type="text" @click="showProfileDialog = true">编辑档案</el-button>
+    </div>
+
+    <!-- 无档案提示 -->
+    <div class="no-profile" v-else>
+      <div class="no-profile-content">
+        <h3>📝 请先完善你的个人信息</h3>
+        <p>这样我们可以为你提供更精准的社团推荐</p>
+        <el-button type="primary" @click="showProfileDialog = true">完善信息</el-button>
+      </div>
+    </div>
+
+    <!-- 推荐结果 -->
+    <div class="recommendation-section">
+      <div class="section-header">
+        <h2>为你推荐</h2>
+        <div class="actions">
+          <el-button size="small" @click="refreshRecommendations" :loading="loading">
+            🔄 刷新推荐
+          </el-button>
+        </div>
+      </div>
+
+      <!-- 加载状态 -->
+      <div class="loading" v-if="loading">
+        <el-skeleton :rows="5" animated />
+      </div>
+
+      <!-- 推荐列表 -->
+      <div class="recommendation-list" v-else>
+        <div 
+          class="recommendation-item" 
+          v-for="item in recommendations" 
+          :key="item.id"
+          @click="goToClub(item.id)"
+        >
+          <div class="club-logo">
+            <img v-if="item.logo" :src="item.logo" :alt="item.name">
+            <span v-else class="logo-placeholder">{{ item.name[0] }}</span>
+          </div>
+          
+          <div class="club-info">
+            <h3>{{ item.name }}</h3>
+            <div class="club-meta">
+              <el-tag size="mini" type="success">{{ item.category }}</el-tag>
+              <span class="members">👥 {{ item.member_count }}人</span>
+              <span class="activities">📅 {{ item.activity_count }}场活动</span>
+            </div>
+            <p class="description">{{ item.description }}</p>
+            
+            <!-- 推荐理由 -->
+            <div class="reasons">
+              <span class="reason-tag" v-for="(reason, idx) in item.reasons" :key="idx">
+                {{ reason }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="match-score">
+            <el-progress 
+              type="circle" 
+              :percentage="item.score" 
+              :width="60"
+              :color="getScoreColor(item.score)"
+            />
+            <p class="score-label">匹配度</p>
+          </div>
+          
+          <div class="item-actions" @click.stop>
+            <el-button 
+              v-if="!isJoined(item.id)" 
+              type="primary" 
+              size="small"
+              @click="applyClub(item.id)"
+            >
+              申请加入
+            </el-button>
+            <el-tag v-else type="success" size="small">已加入</el-tag>
+            <el-button size="small" icon="el-icon-star-off" @click="toggleLike(item)">
+              {{ item.liked ? '已收藏' : '收藏' }}
+            </el-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div class="empty-state" v-if="!loading && recommendations.length === 0">
+        <p>暂无推荐内容，请先完善个人信息</p>
+      </div>
+    </div>
+
+    <!-- 个人信息编辑弹窗 -->
+    <el-dialog title="完善个人信息" :visible.sync="showProfileDialog" width="600px">
+      <el-form :model="profileForm" label-width="80px">
+        <el-form-item label="年级">
+          <el-select v-model="profileForm.grade" placeholder="请选择年级">
+            <el-option label="大一" value="1"></el-option>
+            <el-option label="大二" value="2"></el-option>
+            <el-option label="大三" value="3"></el-option>
+            <el-option label="大四" value="4"></el-option>
+            <el-option label="大五" value="5"></el-option>
+            <el-option label="研究生" value="6"></el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="专业">
+          <el-input v-model="profileForm.major" placeholder="请输入专业"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="学院">
+          <el-input v-model="profileForm.academy" placeholder="请输入学院"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="活跃时间">
+          <div class="active-time">
+            <el-checkbox v-model="profileForm.activeTime.morning">上午</el-checkbox>
+            <el-checkbox v-model="profileForm.activeTime.afternoon">下午</el-checkbox>
+            <el-checkbox v-model="profileForm.activeTime.evening">晚上</el-checkbox>
+            <el-checkbox v-model="profileForm.activeTime.night">深夜</el-checkbox>
+          </div>
+        </el-form-item>
+        
+        <el-form-item label="兴趣标签">
+          <div class="interest-tags">
+            <el-tag
+              v-for="tag in allTags"
+              :key="tag.id"
+              :type="isTagSelected(tag.id) ? 'primary' : 'info'"
+              class="tag-item"
+              @click="toggleTag(tag.id)"
+            >
+              {{ tag.name }}
+            </el-tag>
+          </div>
+        </el-form-item>
+        
+        <el-form-item label="个人简介">
+          <el-input type="textarea" v-model="profileForm.bio" rows="3"></el-input>
+        </el-form-item>
+      </el-form>
+      
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="showProfileDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveProfile" :loading="savingProfile">保存</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import { mapState, mapActions } from 'vuex'
+
+export default {
+  name: 'RecommendationPage',
+  
+  data() {
+    return {
+      loading: true,
+      showProfileDialog: false,
+      savingProfile: false,
+      profile: {},
+      profileForm: {
+        grade: '',
+        major: '',
+        academy: '',
+        bio: '',
+        activeTime: {
+          morning: false,
+          afternoon: false,
+          evening: true,
+          night: false
+        },
+        interests: []
+      },
+      allTags: [],
+      recommendations: [],
+      joinedClubs: [],
+      likedClubs: []
+    }
+  },
+  
+  computed: {
+    ...mapState(['user']),
+    userName() {
+      return this.user?.username || '用户'
+    },
+    hasProfile() {
+      return this.profile && this.profile.major
+    }
+  },
+  
+  async created() {
+    await this.loadData()
+  },
+  
+  methods: {
+    async loadData() {
+      this.loading = true
+      try {
+        await Promise.all([
+          this.loadProfile(),
+          this.loadTags(),
+          this.loadRecommendations(),
+          this.loadUserClubs()
+        ])
+      } finally {
+        this.loading = false
+      }
+    },
+    
+    async loadProfile() {
+      try {
+        const res = await this.$http.get('/api/recommend/profile/')
+        if (res.data.code === 200) {
+          this.profile = res.data.data || {}
+          this.initProfileForm()
+        }
+      } catch (e) {
+        console.error('Load profile error:', e)
+      }
+    },
+    
+    initProfileForm() {
+      if (this.profile) {
+        this.profileForm.grade = this.profile.grade || ''
+        this.profileForm.major = this.profile.major || ''
+        this.profileForm.academy = this.profile.academy || ''
+        this.profileForm.bio = this.profile.bio || ''
+        this.profileForm.activeTime = this.profile.active_time || {
+          morning: false,
+          afternoon: false,
+          evening: true,
+          night: false
+        }
+        this.profileForm.interests = this.profile.interests?.map(i => i.tag_id) || []
+      }
+    },
+    
+    async loadTags() {
+      try {
+        const res = await this.$http.get('/api/recommend/tags/')
+        if (res.data.code === 200) {
+          this.allTags = res.data.data || []
+        }
+      } catch (e) {
+        console.error('Load tags error:', e)
+      }
+    },
+    
+    async loadRecommendations() {
+      try {
+        const res = await this.$http.get('/api/recommend/')
+        if (res.data.code === 200) {
+          this.recommendations = res.data.data || []
+        }
+      } catch (e) {
+        console.error('Load recommendations error:', e)
+      }
+    },
+    
+    async loadUserClubs() {
+      // 获取用户已加入的社团
+      try {
+        const res = await this.$http.get('/api/clubs/my/')
+        if (res.data.code === 200) {
+          this.joinedClubs = res.data.data?.map(c => c.id) || []
+        }
+      } catch (e) {
+        console.error('Load user clubs error:', e)
+      }
+    },
+    
+    async refreshRecommendations() {
+      this.loading = true
+      try {
+        await this.$http.post('/api/recommend/', { refresh: true })
+        await this.loadRecommendations()
+        this.$message.success('推荐已刷新')
+      } catch (e) {
+        this.$message.error('刷新失败')
+      } finally {
+        this.loading = false
+      }
+    },
+    
+    isTagSelected(tagId) {
+      return this.profileForm.interests.includes(tagId)
+    },
+    
+    toggleTag(tagId) {
+      const idx = this.profileForm.interests.indexOf(tagId)
+      if (idx > -1) {
+        this.profileForm.interests.splice(idx, 1)
+      } else {
+        this.profileForm.interests.push(tagId)
+      }
+    },
+    
+    async saveProfile() {
+      this.savingProfile = true
+      try {
+        const activeTime = {}
+        for (const key in this.profileForm.activeTime) {
+          if (this.profileForm.activeTime[key]) {
+            activeTime[key] = 1.0
+          }
+        }
+        
+        await this.$http.post('/api/recommend/profile/', {
+          grade: this.profileForm.grade,
+          major: this.profileForm.major,
+          academy: this.profileForm.academy,
+          bio: this.profileForm.bio,
+          active_time: activeTime,
+          interests: this.profileForm.interests.map(id => ({ tag_id: id, weight: 1.0 }))
+        })
+        
+        this.$message.success('保存成功')
+        this.showProfileDialog = false
+        await this.loadProfile()
+        await this.refreshRecommendations()
+      } catch (e) {
+        this.$message.error('保存失败')
+      } finally {
+        this.savingProfile = false
+      }
+    },
+    
+    getScoreColor(score) {
+      if (score >= 80) return '#67C23A'
+      if (score >= 60) return '#409EFF'
+      if (score >= 40) return '#E6A23C'
+      return '#909399'
+    },
+    
+    isJoined(clubId) {
+      return this.joinedClubs.includes(clubId)
+    },
+    
+    async applyClub(clubId) {
+      try {
+        await this.$http.post(`/api/clubs/${clubId}/apply/`)
+        this.$message.success('申请已提交')
+        this.joinedClubs.push(clubId)
+      } catch (e) {
+        this.$message.error('申请失败')
+      }
+    },
+    
+    async toggleLike(item) {
+      // 记录点赞行为
+      try {
+        await this.$http.post('/api/recommend/behavior/', {
+          behavior_type: 'like',
+          club_id: item.id
+        })
+        item.liked = !item.liked
+        this.$message.success(item.liked ? '已收藏' : '已取消收藏')
+      } catch (e) {
+        this.$message.error('操作失败')
+      }
+    },
+    
+    goToClub(clubId) {
+      this.$router.push(`/clubs/${clubId}/`)
+    }
+  }
+}
+</script>
+
+<style scoped>
+.recommendation-page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 30px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 14px;
+}
+
+.profile-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.info h3 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+}
+
+.info p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.profile-tags {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-tags .el-tag {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+}
+
+.no-profile {
+  background: #f5f7fa;
+  border-radius: 16px;
+  padding: 48px;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.no-profile-content h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.no-profile-content p {
+  margin: 0 0 20px 0;
+  color: #666;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.recommendation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recommendation-item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.recommendation-item:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.club-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.club-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logo-placeholder {
+  font-size: 32px;
+  color: white;
+  font-weight: bold;
+}
+
+.club-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.club-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+.club-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #666;
+}
+
+.description {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reason-tag {
+  background: #ecf5ff;
+  color: #409eff;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.match-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.score-label {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+.item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.active-time {
+  display: flex;
+  gap: 16px;
+}
+
+.interest-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-item {
+  cursor: pointer;
+}
+
+.loading {
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px;
+  color: #999;
+}
+</style>

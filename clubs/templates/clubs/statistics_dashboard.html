@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分析看板 - 智枢青寰</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .page-header {
+            margin-bottom: 24px;
+        }
+        
+        .page-header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .page-header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .overview-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        
+        .stat-icon.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .stat-icon.green { background: linear-gradient(135deg, #85ce61 0%, #3ba272 100%); color: white; }
+        .stat-icon.orange { background: linear-gradient(135deg, #f8b739 0%, #f78913 100%); color: white; }
+        .stat-icon.purple { background: linear-gradient(135deg, #a64de6 0%, #6c5ce7 100%); color: white; }
+        
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        
+        .chart-card.full-width {
+            grid-column: span 2;
+        }
+        
+        .chart-card h3 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .chart-container {
+            min-height: 280px;
+        }
+        
+        .timeline-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+        
+        .timeline-date {
+            width: 100px;
+            color: #999;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-content h4 {
+            margin: 0 0 4px 0;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .timeline-content p {
+            margin: 0 0 8px 0;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .timeline-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            background: #ecf5ff;
+            color: #409eff;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-card.full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container" id="app">
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1>📊 数据分析看板</h1>
+            <p>全方位了解社团运行状态</p>
+        </div>
+
+        <!-- 概览卡片 -->
+        <div class="overview-cards">
+            <div class="stat-card">
+                <div class="stat-icon blue">👥</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="total-users">-</span>
+                    <span class="stat-label">注册用户</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon green">🏠</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="total-clubs">-</span>
+                    <span class="stat-label">社团总数</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon orange">📅</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="total-activities">-</span>
+                    <span class="stat-label">活动总数</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon purple">🎯</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="total-participations">-</span>
+                    <span class="stat-label">参与人次</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="charts-grid">
+            <!-- 社团分类分布 -->
+            <div class="chart-card">
+                <h3>社团分类分布</h3>
+                <div class="chart-container" id="category-chart"></div>
+            </div>
+
+            <!-- 社团人数排行 -->
+            <div class="chart-card">
+                <h3>热门社团 TOP10</h3>
+                <div class="chart-container" id="hot-clubs-chart"></div>
+            </div>
+
+            <!-- 学生年级分布 -->
+            <div class="chart-card">
+                <h3>学生年级分布</h3>
+                <div class="chart-container" id="grade-chart"></div>
+            </div>
+
+            <!-- 活动类型分布 -->
+            <div class="chart-card">
+                <h3>活动类型分布</h3>
+                <div class="chart-container" id="activity-type-chart"></div>
+            </div>
+
+            <!-- 活动时间热力图 -->
+            <div class="chart-card full-width">
+                <h3>活动月度统计</h3>
+                <div class="chart-container" id="heatmap-chart"></div>
+            </div>
+
+            <!-- 活动时间线 -->
+            <div class="chart-card full-width">
+                <h3>近期活动时间线</h3>
+                <div class="timeline-container" id="timeline-container">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 存储图表实例
+        const charts = {};
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOverviewStats();
+            loadClubStats();
+            loadActivityStats();
+            loadStudentStats();
+            loadHeatmap();
+            loadTimeline();
+        });
+        
+        // 加载概览统计
+        async function loadOverviewStats() {
+            try {
+                const res = await fetch('/api/recommend/stats/overview/');
+                const data = await res.json();
+                if (data.code === 200) {
+                    document.getElementById('total-users').textContent = data.data.total_users || 0;
+                    document.getElementById('total-clubs').textContent = data.data.total_clubs || 0;
+                    document.getElementById('total-activities').textContent = data.data.total_activities || 0;
+                    document.getElementById('total-participations').textContent = data.data.total_participations || 0;
+                }
+            } catch (e) {
+                console.error('Load overview stats error:', e);
+            }
+        }
+        
+        // 加载社团统计
+        async function loadClubStats() {
+            try {
+                const res = await fetch('/api/recommend/stats/clubs/');
+                const data = await res.json();
+                if (data.code === 200) {
+                    initCategoryChart(data.data.category_stats);
+                    initHotClubsChart(data.data.hot_clubs);
+                }
+            } catch (e) {
+                console.error('Load club stats error:', e);
+            }
+        }
+        
+        // 加载活动统计
+        async function loadActivityStats() {
+            try {
+                const res = await fetch('/api/recommend/stats/activities/');
+                const data = await res.json();
+                if (data.code === 200) {
+                    initActivityTypeChart(data.data.type_stats);
+                }
+            } catch (e) {
+                console.error('Load activity stats error:', e);
+            }
+        }
+        
+        // 加载学生统计
+        async function loadStudentStats() {
+            try {
+                const res = await fetch('/api/recommend/stats/students/');
+                const data = await res.json();
+                if (data.code === 200) {
+                    initGradeChart(data.data.grade_stats);
+                }
+            } catch (e) {
+                console.error('Load student stats error:', e);
+            }
+        }
+        
+        // 加载热力图数据
+        async function loadHeatmap() {
+            try {
+                const res = await fetch('/api/recommend/stats/heatmap/');
+                const data = await res.json();
+                if (data.code === 200) {
+                    initHeatmapChart(data.data);
+                }
+            } catch (e) {
+                console.error('Load heatmap error:', e);
+            }
+        }
+        
+        // 加载时间线
+        async function loadTimeline() {
+            try {
+                const res = await fetch('/api/recommend/timeline/?days=30');
+                const data = await res.json();
+                if (data.code === 200) {
+                    renderTimeline(data.data);
+                }
+            } catch (e) {
+                console.error('Load timeline error:', e);
+            }
+        }
+        
+        // 渲染时间线
+        function renderTimeline(activities) {
+            const container = document.getElementById('timeline-container');
+            if (!activities || activities.length === 0) {
+                container.innerHTML = '<div class="loading">暂无数据</div>';
+                return;
+            }
+            
+            container.innerHTML = activities.map(activity => `
+                <div class="timeline-item">
+                    <div class="timeline-date">${activity.start_time}</div>
+                    <div class="timeline-content">
+                        <h4>${activity.title}</h4>
+                        <p>${activity.club_name} · ${activity.location}</p>
+                        <div class="timeline-meta">
+                            <span class="badge">${getTypeName(activity.type)}</span>
+                            <span>👥 ${activity.participants}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 获取类型名称
+        function getTypeName(type) {
+            const names = {
+                'competition': '比赛',
+                'training': '培训',
+                'social': '社交',
+                'public_welfare': '公益',
+                'academic': '学术',
+                'entertainment': '娱乐',
+                'other': '其他'
+            };
+            return names[type] || type;
+        }
+        
+        // 获取分类名称
+        function getCategoryName(category) {
+            const names = {
+                'sports': '体育运动',
+                'arts': '文艺表演',
+                'culture': '传统文化',
+                'academic': '学术科创',
+                'public_welfare': '公益实践',
+                'interest': '兴趣生活'
+            };
+            return names[category] || category;
+        }
+        
+        // 初始化社团分类饼图
+        function initCategoryChart(data) {
+            const dom = document.getElementById('category-chart');
+            if (!dom) return;
+            
+            charts.category = echarts.init(dom);
+            
+            const chartData = (data || []).map(item => ({
+                name: getCategoryName(item.category),
+                value: item.count
+            }));
+            
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left'
+                },
+                series: [{
+                    name: '社团分类',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        formatter: '{b}: {c}'
+                    },
+                    data: chartData.length > 0 ? chartData : [{name: '暂无数据', value: 0}],
+                    color: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272']
+                }]
+            };
+            
+            charts.category.setOption(option);
+            window.addEventListener('resize', () => charts.category?.resize());
+        }
+        
+        // 初始化热门社团柱状图
+        function initHotClubsChart(data) {
+            const dom = document.getElementById('hot-clubs-chart');
+            if (!dom) return;
+            
+            charts.hotClubs = echarts.init(dom);
+            
+            const chartData = (data || []).slice(0, 10);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'value'
+                },
+                yAxis: {
+                    type: 'category',
+                    data: chartData.map(item => item.name).reverse(),
+                    axisLabel: {
+                        interval: 0,
+                        fontSize: 11
+                    }
+                },
+                series: [{
+                    name: '成员数',
+                    type: 'bar',
+                    data: chartData.map(item => item.member_count).reverse(),
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#667eea' },
+                            { offset: 1, color: '#764ba2' }
+                        ]),
+                        borderRadius: [0, 4, 4, 0]
+                    },
+                    label: {
+                        show: true,
+                        position: 'right',
+                        formatter: '{c}'
+                    }
+                }]
+            };
+            
+            charts.hotClubs.setOption(option);
+            window.addEventListener('resize', () => charts.hotClubs?.resize());
+        }
+        
+        // 初始化年级分布环形图
+        function initGradeChart(data) {
+            const dom = document.getElementById('grade-chart');
+            if (!dom) return;
+            
+            charts.grade = echarts.init(dom);
+            
+            const gradeMap = { '1': '大一', '2': '大二', '3': '大三', '4': '大四', '5': '大五', '6': '研究生' };
+            const chartData = (data || []).map(item => ({
+                name: gradeMap[item.grade] || item.grade,
+                value: item.count
+            }));
+            
+            const option = {
+                tooltip: {
+                    trigger: 'item'
+                },
+                series: [{
+                    name: '年级分布',
+                    type: 'pie',
+                    radius: ['45%', '70%'],
+                    center: ['50%', '50%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: {
+                        borderRadius: 8,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        formatter: '{b}: {c}',
+                        fontSize: 12
+                    },
+                    data: chartData.length > 0 ? chartData : [{name: '暂无数据', value: 0}],
+                    color: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272']
+                }]
+            };
+            
+            charts.grade.setOption(option);
+            window.addEventListener('resize', () => charts.grade?.resize());
+        }
+        
+        // 初始化活动类型分布柱状图
+        function initActivityTypeChart(data) {
+            const dom = document.getElementById('activity-type-chart');
+            if (!dom) return;
+            
+            charts.activityType = echarts.init(dom);
+            
+            const typeMap = {
+                'competition': '比赛',
+                'training': '培训',
+                'social': '社交',
+                'public_welfare': '公益',
+                'academic': '学术',
+                'entertainment': '娱乐',
+                'other': '其他'
+            };
+            
+            const chartData = (data || []).map(item => ({
+                name: typeMap[item.activity_type] || item.activity_type,
+                value: item.count
+            }));
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: chartData.map(item => item.name),
+                    axisLabel: { interval: 0 }
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [{
+                    name: '活动数量',
+                    type: 'bar',
+                    data: chartData.map(item => item.value),
+                    itemStyle: {
+                        color: '#5470c6',
+                        borderRadius: [4, 4, 0, 0]
+                    },
+                    label: {
+                        show: true,
+                        position: 'top'
+                    }
+                }]
+            };
+            
+            charts.activityType.setOption(option);
+            window.addEventListener('resize', () => charts.activityType?.resize());
+        }
+        
+        // 初始化热力图
+        function initHeatmapChart(data) {
+            const dom = document.getElementById('heatmap-chart');
+            if (!dom) return;
+            
+            charts.heatmap = echarts.init(dom);
+            
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            const monthly = data.monthly || [];
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: months,
+                    axisLabel: { interval: 0 }
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [{
+                    name: '活动数量',
+                    type: 'bar',
+                    data: monthly,
+                    itemStyle: {
+                        color: function(params) {
+                            const colorList = ['#e8f3ff', '#a8d4ff', '#5eb0ff', '#1e8cff', '#0066cc'];
+                            const idx = Math.min(Math.floor(params.value / 3), 4);
+                            return colorList[idx];
+                        },
+                        borderRadius: [4, 4, 0, 0]
+                    }
+                }]
+            };
+            
+            charts.heatmap.setOption(option);
+            window.addEventListener('resize', () => charts.heatmap?.resize());
+        }
+    </script>
+</body>
+</html>

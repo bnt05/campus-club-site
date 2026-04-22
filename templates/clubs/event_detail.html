@@ -1,0 +1,148 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}{{ event.title }} - 活动详情{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h2>{{ event.title }}</h2>
+                        {% if event.is_public %}
+                        <span class="badge bg-success">公开活动</span>
+                        {% else %}
+                        <span class="badge bg-secondary">非公开活动</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="me-3"><i class="bi bi-building"></i> 主办: {{ event.club.name }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <i class="bi bi-calendar"></i> 
+                        {{ event.start_date|date:"Y年m月d日" }}
+                        {% if event.end_date %} ~ {{ event.end_date|date:"Y年m月d日" }}{% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <i class="bi bi-geo-alt"></i> {{ event.location|default:"待定" }}
+                    </div>
+
+                    {% if event.partner_school %}
+                    <div class="mb-3">
+                        <i class="bi bi-school"></i> 合作学校: {{ event.partner_school }}
+                    </div>
+                    {% endif %}
+
+                    {% if event.category %}
+                    <div class="mb-3">
+                        <span class="badge bg-info">{{ event.get_category_display }}</span>
+                    </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <h4>活动简介</h4>
+                    <p>{{ event.description|linebreaks|default:"暂无描述" }}</p>
+
+                    {% if event.purpose %}
+                    <h4 class="mt-4">活动目的</h4>
+                    <p>{{ event.purpose|linebreaks }}</p>
+                    {% endif %}
+
+                    {% if event.flow %}
+                    <h4 class="mt-4">活动流程</h4>
+                    <p>{{ event.flow|linebreaks }}</p>
+                    {% endif %}
+
+                    {% if event.precautions %}
+                    <h4 class="mt-4">注意事项</h4>
+                    <p>{{ event.precautions|linebreaks }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">报名信息</h5>
+                    
+                    <div class="mb-3">
+                        <i class="bi bi-people"></i> 
+                        <strong>{{ event.participant_count|default:0 }}</strong> 人已报名
+                    </div>
+
+                    {% if event.max_participants %}
+                    <div class="mb-3">
+                        <i class="bi bi-person-plus"></i> 
+                        名额：{{ event.max_participants }} 人
+                    </div>
+                    {% endif %}
+
+                    {% if user.is_authenticated %}
+                        {% if is_joined %}
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'event_leave' event.id %}" class="btn btn-outline-danger">取消报名</a>
+                            <a href="{% url 'event_ical' event.id %}" class="btn btn-outline-primary">添加到日历</a>
+                        </div>
+                        {% else %}
+                            {% if event.max_participants and event.participant_count >= event.max_participants %}
+                            <button class="btn btn-secondary w-100" disabled>名额已满</button>
+                            {% else %}
+                            <a href="{% url 'event_join' event.id %}" class="btn btn-primary w-100">
+                                <i class="bi bi-check-circle"></i> 立即报名
+                            </a>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'login' %}" class="btn btn-primary">登录后报名</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if can_edit %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">管理</h5>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'event_edit' event.id %}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> 编辑活动
+                        </a>
+                        <a href="{% url 'event_delete' event.id %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> 删除活动
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 参与者列表 -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">参与者</h5>
+                    {% if event.participants.all %}
+                    <ul class="list-unstyled">
+                        {% for participant in event.participants.all|slice:":10" %}
+                        <li class="mb-2">
+                            <i class="bi bi-person-circle"></i> {{ participant.username }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% if event.participants.all|length > 10 %}
+                    <small class="text-muted">还有 {{ event.participants.all|length|add:"-10" }} 人...</small>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-muted">暂无参与者</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

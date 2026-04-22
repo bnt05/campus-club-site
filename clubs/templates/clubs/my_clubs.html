@@ -1,0 +1,43 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}我的社团{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>我的社团</h2>
+        <a href="{% url 'club_create' %}" class="btn btn-primary">创建新社团</a>
+    </div>
+
+    {% if clubs %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for club in clubs %}
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="row g-0">
+                            <div class="col-md-4">
+                                {% if club.poster %}
+                                    <img src="{{ club.poster.url }}" class="img-fluid rounded-start" alt="{{ club.name }}" style="height: 100%; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center h-100" style="min-height: 120px;">
+                                        <span class="text-muted">无宣传图</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ club.name }}</h5>
+                                    <p class="card-text text-muted">{{ club.get_category_display }}</p>
+                                    <p class="card-text">{{ club.description|truncatechars:80 }}</p>
+                                    <p class="card-text"><small class="text-muted">成员：{{ club.member_count }} | 评分：{{ club.avg_score|default_if_none:'--'|floatformat:1 }}</small></p>
+                                    <a href="{% url 'club_detail' club.id %}" class="btn btn-primary btn-sm">进入社团</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">你还没有加入任何社团，快去 <a href="{% url 'index' %}">社团列表</a> 看看吧！</div>
+    {% endif %}
+{% endblock %}

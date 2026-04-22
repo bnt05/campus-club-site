@@ -1,0 +1,83 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}MBTI测试 - 校园社团网{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #4F46E5, #7C3AED);">
+                    <h4 class="mb-0"><i class="bi bi-grid"></i> MBTI性格测试</h4>
+                </div>
+                <div class="card-body">
+                    {% if not completed %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        完成测试，了解你的性格类型，发现最匹配的社团！
+                    </div>
+
+                    <form method="post" id="mbti-form">
+                        {% csrf_token %}
+                        
+                        {% for question in questions %}
+                        <div class="question-box mb-4 p-3 border rounded">
+                            <h5 class="mb-3">{{ forloop.counter }}. {{ question.question }}</h5>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="q_{{ forloop.counter }}" id="q{{ forloop.counter }}_e" value="{{ question.options.0.key }}" required>
+                                <label class="form-check-label" for="q{{ forloop.counter }}_e">{{ question.options.0.text }}</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="q_{{ forloop.counter }}" id="q{{ forloop.counter }}_i" value="{{ question.options.1.key }}">
+                                <label class="form-check-label" for="q{{ forloop.counter }}_i">{{ question.options.1.text }}</label>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted text-center">暂无题目</p>
+                        {% endfor %}
+
+                        <input type="hidden" name="answers" id="answers">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-check-circle"></i> 提交测试
+                        </button>
+                    </form>
+                    {% else %}
+                    <!-- 测试结果 -->
+                    <div class="text-center py-4">
+                        <div class="display-1 text-primary mb-3">{{ mbti_type }}</div>
+                        <h3>你的MBTI类型是：{{ mbti_type }}</h3>
+                        <p class="text-muted">{{ mbti_description }}</p>
+                        
+                        <hr class="my-4">
+                        
+                        <h5><i class="bi bi-people"></i> 推荐的社团类型</h5>
+                        {% if recommended_clubs %}
+                        <div class="row mt-3">
+                            {% for club in recommended_clubs %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>{{ club.name }}</h6>
+                                        <p class="text-muted small">{{ club.description|truncatewords:15 }}</p>
+                                        <a href="{% url 'club_detail' club.id %}" class="btn btn-sm btn-outline-primary">查看社团</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">暂无推荐</p>
+                        {% endif %}
+
+                        <div class="mt-4">
+                            <a href="{% url 'index' %}" class="btn btn-primary">浏览所有社团</a>
+                            <a href="{% url 'ai_assistant' %}" class="btn btn-outline-primary">与AI助手聊天</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

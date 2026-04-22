@@ -1,0 +1,190 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}活动百科 - 智枢青寰{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 搜索框 -->
+    <div class="search-box mb-4">
+        <form action="{% url 'encyclopedia_search' %}" method="get" class="search-form">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="q" class="form-control border-start-0 border-end-0" placeholder="搜索活动百科..." value="{{ query|default:'' }}">
+                <button type="submit" class="btn btn-primary">搜索</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 标签筛选区 -->
+    <div class="category-filter mb-4">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'encyclopedia_home' %}" class="tag-btn {% if not selected_category %}active{% endif %}">
+                全部
+            </a>
+            {% for cat in categories %}
+            <a href="?category={{ cat.slug }}" class="tag-btn {% if selected_category == cat.slug %}active{% endif %}">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 当前筛选状态 -->
+    {% if current_category %}
+    <div class="filter-status mb-4">
+        <h4>{{ current_category.name }}</h4>
+    </div>
+    {% else %}
+    <div class="filter-status mb-4">
+        <h4>全部活动百科 <small class="text-muted">({{ page_obj.paginator.count }} 篇)</small></h4>
+    </div>
+    {% endif %}
+
+    <!-- 文章网格 -->
+    {% if page_obj %}
+    <div class="article-grid">
+        {% for article in page_obj %}
+        <a href="{% url 'encyclopedia_article' article.slug %}" class="article-card">
+            <div class="card-content">
+                <span class="card-category">{{ article.category.name }}</span>
+                <h5 class="card-title">{{ article.title }}</h5>
+
+                <div class="card-meta">
+                    <span><i class="bi bi-eye"></i> {{ article.views }}</span>
+                    <span><i class="bi bi-calendar"></i> {{ article.created_at|date:"Y-m-d" }}</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- 分页 -->
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if query %}&q={{ query }}{% endif %}">上一页</a>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if num >= page_obj.number|add:'-3' and num <= page_obj.number|add:'3' %}
+                <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if query %}&q={{ query }}{% endif %}">下一页</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state text-center py-5">
+        <i class="bi bi-folder-x" style="font-size: 4rem; color: #e0e0e0;"></i>
+        <p class="text-muted mt-3">暂无相关内容</p>
+        {% if selected_category %}
+        <a href="{% url 'encyclopedia_home' %}" class="btn btn-primary">查看全部</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.search-box {
+    max-width: 600px;
+    margin: 0 auto 30px;
+}
+.search-form .form-control:focus {
+    border-color: #3B82F6;
+    box-shadow: none;
+}
+.category-filter {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.tag-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: #f5f5f5;
+    color: #666;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+.tag-btn:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+.tag-btn.active {
+    background: linear-gradient(135deg, #1E3A5F, #3B82F6);
+    color: white;
+}
+.article-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+.article-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s;
+    padding: 20px;
+}
+.article-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+.card-content {
+    text-align: center;
+}
+.card-category {
+    display: inline-block;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, #667EEA, #764BA2);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+}
+.card-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #1E3A5F;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+.card-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: #999;
+    justify-content: center;
+}
+.pagination .page-link {
+    border-radius: 20px;
+    margin: 0 4px;
+    border: none;
+    color: #666;
+}
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #1E3A5F, #3B82F6);
+    color: white;
+}
+</style>
+{% endblock %}

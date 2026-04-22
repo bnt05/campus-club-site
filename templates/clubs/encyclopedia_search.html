@@ -1,0 +1,113 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}搜索结果 - 活动百科 - 智枢青寰{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 搜索框 -->
+    <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+        <div class="card-body p-4">
+            <form action="{% url 'encyclopedia_search' %}" method="get" class="row g-3">
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="q" class="form-control border-start-0" placeholder="搜索活动百科..." value="{{ query }}" style="border-left: none;">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100" style="border-radius: 20px; background: linear-gradient(135deg, #1E3A5F, #3B82F6); border: none;">
+                        <i class="bi bi-search"></i> 搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 搜索结果 -->
+    {% if query %}
+    <div class="mb-4">
+        <h4>搜索"{{ query }}"的结果</h4>
+        <small class="text-muted">共找到 {{ page_obj.paginator.count|default:0 }} 条结果</small>
+    </div>
+
+    {% if page_obj %}
+    <div class="row">
+        {% for article in page_obj %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <a href="{% url 'encyclopedia_article' article.slug %}" class="text-decoration-none">
+                <div class="card h-100" style="border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden;">
+                    {% if article.image_url %}
+                    <div style="height: 160px; overflow: hidden;">
+                        <img src="{{ article.image_url }}" alt="{{ article.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    {% else %}
+                    <div style="height: 160px; background: linear-gradient(135deg, #667EEA, #764BA2); display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-book text-white" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h6 class="card-title mb-2" style="color: #1E3A5F;">{{ article.title }}</h6>
+                        <p class="card-text small text-muted mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 40px;">
+                            {{ article.summary|default:'暂无简介' }}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center small text-muted">
+                            <span class="badge" style="background: linear-gradient(135deg, #667EEA, #764BA2); border-radius: 20px;">{{ article.category.name }}</span>
+                            <span><i class="bi bi-eye"></i> {{ article.views }}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页 -->
+    {% if page_obj.has_other_pages %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}" style="border-radius: 20px; margin: 0 4px;">上一页</a>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                    <a class="page-link" href="?q={{ query }}&page={{ num }}" style="border-radius: 20px; margin: 0 4px; {% if num == page_obj.number %}background: linear-gradient(135deg, #1E3A5F, #3B82F6); border: none; color: white;{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}" style="border-radius: 20px; margin: 0 4px;">下一页</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-search" style="font-size: 4rem; color: #e0e0e0;"></i>
+        <p class="text-muted mt-3">未找到相关结果</p>
+        <p class="text-muted">试试其他关键词</p>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-search" style="font-size: 4rem; color: #e0e0e0;"></i>
+        <p class="text-muted mt-3">输入关键词搜索活动百科</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
+}
+</style>
+{% endblock %}

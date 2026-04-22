@@ -1,0 +1,85 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}编辑社团 - {{ club.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h4 class="mb-0"><i class="bi bi-pencil"></i> 编辑社团</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label">社团名称 *</label>
+                            <input type="text" name="name" class="form-control" id="id_name" required maxlength="100" value="{{ club.name }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_category" class="form-label">社团分类 *</label>
+                            <select name="category" class="form-select" id="id_category" required>
+                                <option value="">请选择分类</option>
+                                <option value="学术" {% if club.category == '学术' %}selected{% endif %}>学术类</option>
+                                <option value="艺术" {% if club.category == '艺术' %}selected{% endif %}>艺术类</option>
+                                <option value="体育" {% if club.category == '体育' %}selected{% endif %}>体育类</option>
+                                <option value="科技" {% if club.category == '科技' %}selected{% endif %}>科技类</option>
+                                <option value="公益" {% if club.category == '公益' %}selected{% endif %}>公益类</option>
+                                <option value="综合" {% if club.category == '综合' %}selected{% endif %}>综合类</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">社团描述 *</label>
+                            <textarea name="description" class="form-control" id="id_description" rows="4" required>{{ club.description }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_logo" class="form-label">社团标志</label>
+                            {% if club.logo %}
+                            <div class="mb-2">
+                                <img src="{{ club.logo.url }}" alt="当前标志" style="max-height: 100px;">
+                            </div>
+                            {% endif %}
+                            <input type="file" name="logo" class="form-control" id="id_logo" accept="image/*">
+                            <small class="text-muted">上传新图片以更换现有标志（可选）</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_contact" class="form-label">联系方式</label>
+                            <input type="text" name="contact" class="form-control" id="id_contact" value="{{ club.contact|default:'' }}">
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="is_private" class="form-check-input" id="id_is_private" {% if club.is_private %}checked{% endif %}>
+                            <label class="form-check-label" for="id_is_private">
+                                设为私密社团
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'club_detail' club.id %}" class="btn btn-outline-secondary">取消</a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle"></i> 保存修改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

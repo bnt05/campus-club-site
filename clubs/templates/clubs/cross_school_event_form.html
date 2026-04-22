@@ -1,0 +1,72 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">{{ title }}</h2>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        <div class="mb-3">{{ form.title.label_tag }}{{ form.title }}{% if form.title.errors %}<div class="text-danger small">{{ form.title.errors }}</div>{% endif %}</div>
+                        <div class="mb-3">{{ form.category.label_tag }}{{ form.category }}{% if form.category.errors %}<div class="text-danger small">{{ form.category.errors }}</div>{% endif %}</div>
+                        <div class="mb-3">{{ form.scope.label_tag }}{{ form.scope }}{% if form.scope.errors %}<div class="text-danger small">{{ form.scope.errors }}</div>{% endif %}</div>
+                        {% if 'club' in form.fields %}
+                            <div id="club-select-container" class="mb-3" style="display: none;">
+                                {{ form.club.label_tag }}{{ form.club }}
+                                {% if form.club.help_text %}<div class="form-text">{{ form.club.help_text }}</div>{% endif %}
+                                {% if form.club.errors %}<div class="text-danger small">{{ form.club.errors }}</div>{% endif %}
+                            </div>
+                        {% endif %}
+                        <div class="mb-3">{{ form.description.label_tag }}{{ form.description }}{% if form.description.errors %}<div class="text-danger small">{{ form.description.errors }}</div>{% endif %}</div>
+                        <div class="mb-3">{{ form.location.label_tag }}{{ form.location }}{% if form.location.errors %}<div class="text-danger small">{{ form.location.errors }}</div>{% endif %}</div>
+                        <div class="mb-3">{{ form.purpose.label_tag }}{{ form.purpose }}{% if form.purpose.errors %}<div class="text-danger small">{{ form.purpose.errors }}</div>{% endif %}</div>
+                        <div class="mb-3">{{ form.flow.label_tag }}{{ form.flow }}{% if form.flow.errors %}<div class="text-danger small">{{ form.flow.errors }}</div>{% endif %}</div>
+                        <div class="mb-3">{{ form.precautions.label_tag }}{{ form.precautions }}{% if form.precautions.errors %}<div class="text-danger small">{{ form.precautions.errors }}</div>{% endif %}</div>
+                        <div class="mb-3">{{ form.poster.label_tag }}{{ form.poster }}{% if form.poster.errors %}<div class="text-danger small">{{ form.poster.errors }}</div>{% endif %}</div>
+                        <div class="row g-3">
+                            <div class="col-md-6 mb-3">{{ form.start_date.label_tag }}{{ form.start_date }}{% if form.start_date.errors %}<div class="text-danger small">{{ form.start_date.errors }}</div>{% endif %}</div>
+                            <div class="col-md-6 mb-3">{{ form.end_date.label_tag }}{{ form.end_date }}{% if form.end_date.errors %}<div class="text-danger small">{{ form.end_date.errors }}</div>{% endif %}</div>
+                        </div>
+                        <div class="mb-3">{{ form.max_participants.label_tag }}{{ form.max_participants }}{% if form.max_participants.errors %}<div class="text-danger small">{{ form.max_participants.errors }}</div>{% endif %}</div>
+                        <div class="form-check mb-3">
+                            {{ form.is_public }} {{ form.is_public.label_tag }}{% if form.is_public.errors %}<div class="text-danger small">{{ form.is_public.errors }}</div>{% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary">发布</button>
+                        {% if club %}
+                            <a class="btn btn-secondary" href="{% url 'club_detail' club.id %}">返回社团</a>
+                        {% else %}
+                            <a class="btn btn-secondary" href="{% url 'events_list' %}">返回活动</a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+        function toggleClubSelect() {
+            const scopeField = document.querySelector('[name="scope"]');
+            const clubContainer = document.getElementById('club-select-container');
+            if (!scopeField || !clubContainer) return;
+            if (scopeField.value === 'club_activity') {
+                clubContainer.style.display = 'block';
+            } else {
+                clubContainer.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const scopeField = document.querySelector('[name="scope"]');
+            if (!scopeField) return;
+            scopeField.addEventListener('change', toggleClubSelect);
+            toggleClubSelect();
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}创建社团 - 校园社团网{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-plus-circle"></i> 创建新社团</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label">社团名称 *</label>
+                            <input type="text" name="name" class="form-control" id="id_name" required maxlength="100" placeholder="请输入社团名称">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_category" class="form-label">社团分类 *</label>
+                            <select name="category" class="form-select" id="id_category" required>
+                                <option value="">请选择分类</option>
+                                <option value="学术">学术类</option>
+                                <option value="艺术">艺术类</option>
+                                <option value="体育">体育类</option>
+                                <option value="科技">科技类</option>
+                                <option value="公益">公益类</option>
+                                <option value="综合">综合类</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">社团描述 *</label>
+                            <textarea name="description" class="form-control" id="id_description" rows="4" required placeholder="请详细描述社团的宗旨、活动内容等"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_logo" class="form-label">社团标志</label>
+                            <input type="file" name="logo" class="form-control" id="id_logo" accept="image/*">
+                            <small class="text-muted">上传社团标志图片（可选）</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_contact" class="form-label">联系方式</label>
+                            <input type="text" name="contact" class="form-control" id="id_contact" placeholder="如：邮箱、微信群等">
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="is_private" class="form-check-input" id="id_is_private">
+                            <label class="form-check-label" for="id_is_private">
+                                设为私密社团（需要申请才能加入）
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'index' %}" class="btn btn-outline-secondary">取消</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> 创建社团
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

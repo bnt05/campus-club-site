@@ -1,0 +1,695 @@
+<template id="recommendation-page">
+{% extends "clubs/base.html" %}
+{% load static %}
+
+{% block title %}社团智能推荐 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<style>
+.recommendation-page {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 14px;
+}
+
+.profile-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.info h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+}
+
+.info p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.profile-tags {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.profile-tags .badge {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.no-profile {
+    background: #f5f7fa;
+    border-radius: 16px;
+    padding: 48px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.recommendation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.recommendation-item {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.recommendation-item:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+.club-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-size: 32px;
+    color: white;
+    font-weight: bold;
+}
+
+.club-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.club-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.club-info h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+}
+
+.club-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.club-meta .badge {
+    background: #ecf5ff;
+    color: #409eff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.description {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.reason-tag {
+    background: #ecf5ff;
+    color: #409eff;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.match-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.score-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: conic-gradient(#667eea {{ score }}%, #e0e0e0 0%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.score-inner {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.score-label {
+    font-size: 12px;
+    color: #999;
+    margin: 4px 0 0 0;
+}
+
+.item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.loading {
+    padding: 40px;
+    text-align: center;
+    color: #999;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px;
+    color: #999;
+    background: white;
+    border-radius: 12px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: white;
+    border: 1px solid #ddd;
+    color: #666;
+}
+
+.btn-outline:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+</style>
+
+<div class="recommendation-page" id="app">
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <h1>🧠 智能社团推荐</h1>
+        <p class="subtitle">基于你的兴趣和偏好，为你推荐最适合的社团</p>
+    </div>
+
+    <!-- 用户档案卡片 -->
+    <div class="profile-card" v-if="hasProfile">
+        <div class="profile-info">
+            <div class="avatar">[[ userName[0] ]]</div>
+            <div class="info">
+                <h3>[[ userName ]]</h3>
+                <p>[[ profile.grade || '未填写' ]] · [[ profile.major || '未填写专业' ]] · [[ profile.academy || '未填写学院' ]]</p>
+            </div>
+        </div>
+        <div class="profile-tags">
+            <span class="badge" v-for="interest in profile.interests" :key="interest.tag_id">[[ interest.tag_name ]]</span>
+        </div>
+        <button class="btn btn-outline" @click="showProfileDialog = true" style="background: rgba(255,255,255,0.2); color: white; border: none;">
+            编辑档案
+        </button>
+    </div>
+
+    <!-- 无档案提示 -->
+    <div class="no-profile" v-else>
+        <h3>📝 请先完善你的个人信息</h3>
+        <p>这样我们可以为你提供更精准的社团推荐</p>
+        <button class="btn btn-primary" @click="showProfileDialog = true">完善信息</button>
+    </div>
+
+    <!-- 推荐结果 -->
+    <div class="recommendation-section">
+        <div class="section-header">
+            <h2>为你推荐</h2>
+            <button class="btn btn-outline" @click="refreshRecommendations" :disabled="loading">
+                🔄 刷新推荐
+            </button>
+        </div>
+
+        <!-- 加载状态 -->
+        <div class="loading" v-if="loading">
+            <p>加载中...</p>
+        </div>
+
+        <!-- 推荐列表 -->
+        <div class="recommendation-list" v-else>
+            <div 
+                class="recommendation-item" 
+                v-for="item in recommendations" 
+                :key="item.id"
+                @click="goToClub(item.id)"
+            >
+                <div class="club-logo">
+                    <img v-if="item.logo" :src="item.logo" :alt="item.name">
+                    <span v-else>[[ item.name[0] ]]</span>
+                </div>
+                
+                <div class="club-info">
+                    <h3>[[ item.name ]]</h3>
+                    <div class="club-meta">
+                        <span class="badge">[[ item.category ]]</span>
+                        <span>👥 [[ item.member_count ]]人</span>
+                        <span>📅 [[ item.activity_count ]]场活动</span>
+                    </div>
+                    <p class="description">[[ item.description ]]</p>
+                    
+                    <!-- 推荐理由 -->
+                    <div class="reasons">
+                        <span class="reason-tag" v-for="(reason, idx) in item.reasons" :key="idx">
+                            [[ reason ]]
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="match-score">
+                    <div class="score-circle" :style="{background: `conic-gradient(#667eea ${item.score}%, #e0e0e0 0%)`}">
+                        <div class="score-inner">[[ item.score.toFixed(0) ]]%</div>
+                    </div>
+                    <p class="score-label">匹配度</p>
+                </div>
+                
+                <div class="item-actions" @click.stop>
+                    <button 
+                        v-if="!isJoined(item.id)" 
+                        class="btn btn-primary"
+                        @click="applyClub(item.id)"
+                    >
+                        申请加入
+                    </button>
+                    <span v-else class="badge" style="background: #67c23a; color: white;">已加入</span>
+                    <button class="btn btn-outline" @click="toggleLike(item)">
+                        [[ item.liked ? '❤️ 已收藏' : '🤍 收藏' ]]
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div class="empty-state" v-if="!loading && recommendations.length === 0">
+            <p>暂无推荐内容，请先完善个人信息</p>
+        </div>
+    </div>
+
+    <!-- 个人信息编辑弹窗 (简化版) -->
+    <div v-if="showProfileDialog" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; padding: 32px; width: 500px; max-width: 90%;">
+            <h3 style="margin: 0 0 20px 0;">完善个人信息</h3>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 4px; font-size: 14px; color: #666;">年级</label>
+                <select v-model="profileForm.grade" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;">
+                    <option value="">请选择年级</option>
+                    <option value="1">大一</option>
+                    <option value="2">大二</option>
+                    <option value="3">大三</option>
+                    <option value="4">大四</option>
+                    <option value="5">大五</option>
+                    <option value="6">研究生</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 4px; font-size: 14px; color: #666;">专业</label>
+                <input type="text" v-model="profileForm.major" placeholder="请输入专业" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 4px; font-size: 14px; color: #666;">学院</label>
+                <input type="text" v-model="profileForm.academy" placeholder="请输入学院" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #666;">活跃时间</label>
+                <div style="display: flex; gap: 16px;">
+                    <label><input type="checkbox" v-model="profileForm.activeTime.morning"> 上午</label>
+                    <label><input type="checkbox" v-model="profileForm.activeTime.afternoon"> 下午</label>
+                    <label><input type="checkbox" v-model="profileForm.activeTime.evening"> 晚上</label>
+                    <label><input type="checkbox" v-model="profileForm.activeTime.night"> 深夜</label>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #666;">兴趣标签</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <span 
+                        v-for="tag in allTags" 
+                        :key="tag.id"
+                        @click="toggleTag(tag.id)"
+                        :style="{
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            background: isTagSelected(tag.id) ? '#667eea' : '#f5f7fa',
+                            color: isTagSelected(tag.id) ? 'white' : '#666'
+                        }"
+                    >
+                        [[ tag.name ]]
+                    </span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                <button class="btn btn-outline" @click="showProfileDialog = false">取消</button>
+                <button class="btn btn-primary" @click="saveProfile" :disabled="savingProfile">
+                    [[ savingProfile ? '保存中...' : '保存' ]]
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+new Vue({
+    el: '#app',
+    delimiters: ['[[', ']]'],
+    data: {
+        loading: true,
+        showProfileDialog: false,
+        savingProfile: false,
+        profile: {},
+        profileForm: {
+            grade: '',
+            major: '',
+            academy: '',
+            bio: '',
+            activeTime: {
+                morning: false,
+                afternoon: false,
+                evening: true,
+                night: false
+            },
+            interests: []
+        },
+        allTags: [],
+        recommendations: [],
+        joinedClubs: [],
+        userName: '{{ request.user.username }}',
+    },
+    computed: {
+        hasProfile() {
+            return this.profile && this.profile.major;
+        }
+    },
+    mounted() {
+        this.loadData();
+    },
+    methods: {
+        async loadData() {
+            this.loading = true;
+            try {
+                await Promise.all([
+                    this.loadProfile(),
+                    this.loadTags(),
+                    this.loadRecommendations(),
+                    this.loadUserClubs()
+                ]);
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        async loadProfile() {
+            try {
+                const res = await fetch('/api/recommend/profile/', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await res.json();
+                if (data.code === 200 && data.data) {
+                    this.profile = data.data;
+                    this.initProfileForm();
+                }
+            } catch (e) {
+                console.error('Load profile error:', e);
+            }
+        },
+        
+        initProfileForm() {
+            if (this.profile) {
+                this.profileForm.grade = this.profile.grade || '';
+                this.profileForm.major = this.profile.major || '';
+                this.profileForm.academy = this.profile.academy || '';
+                this.profileForm.bio = this.profile.bio || '';
+                this.profileForm.activeTime = this.profile.active_time || {
+                    morning: false,
+                    afternoon: false,
+                    evening: true,
+                    night: false
+                };
+                this.profileForm.interests = this.profile.interests?.map(i => i.tag_id) || [];
+            }
+        },
+        
+        async loadTags() {
+            try {
+                const res = await fetch('/api/recommend/tags/');
+                const data = await res.json();
+                if (data.code === 200) {
+                    this.allTags = data.data || [];
+                }
+            } catch (e) {
+                console.error('Load tags error:', e);
+            }
+        },
+        
+        async loadRecommendations() {
+            try {
+                const res = await fetch('/api/recommend/', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    this.recommendations = data.data || [];
+                }
+            } catch (e) {
+                console.error('Load recommendations error:', e);
+            }
+        },
+        
+        async loadUserClubs() {
+            try {
+                const res = await fetch('/clubs/my/', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                if (res.redirected) {
+                    // Not logged in or other issue
+                    return;
+                }
+                const text = await res.text();
+                // Parse clubs from page if needed
+            } catch (e) {
+                console.error('Load user clubs error:', e);
+            }
+        },
+        
+        async refreshRecommendations() {
+            this.loading = true;
+            try {
+                await this.loadRecommendations();
+                alert('推荐已刷新');
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        isTagSelected(tagId) {
+            return this.profileForm.interests.includes(tagId);
+        },
+        
+        toggleTag(tagId) {
+            const idx = this.profileForm.interests.indexOf(tagId);
+            if (idx > -1) {
+                this.profileForm.interests.splice(idx, 1);
+            } else {
+                this.profileForm.interests.push(tagId);
+            }
+        },
+        
+        async saveProfile() {
+            this.savingProfile = true;
+            try {
+                const activeTime = {};
+                for (const key in this.profileForm.activeTime) {
+                    if (this.profileForm.activeTime[key]) {
+                        activeTime[key] = 1.0;
+                    }
+                }
+                
+                const res = await fetch('/api/recommend/profile/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        grade: this.profileForm.grade,
+                        major: this.profileForm.major,
+                        academy: this.profileForm.academy,
+                        bio: this.profileForm.bio,
+                        active_time: activeTime,
+                        interests: this.profileForm.interests.map(id => ({ tag_id: id, weight: 1.0 }))
+                    })
+                });
+                
+                const data = await res.json();
+                if (data.code === 200) {
+                    alert('保存成功');
+                    this.showProfileDialog = false;
+                    await this.loadProfile();
+                    await this.loadRecommendations();
+                } else {
+                    alert(data.msg || '保存失败');
+                }
+            } catch (e) {
+                alert('保存失败');
+            } finally {
+                this.savingProfile = false;
+            }
+        },
+        
+        isJoined(clubId) {
+            return this.joinedClubs.includes(clubId);
+        },
+        
+        async applyClub(clubId) {
+            try {
+                const res = await fetch(`/clubs/${clubId}/join/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                if (res.redirected || res.ok) {
+                    alert('申请已提交');
+                    this.joinedClubs.push(clubId);
+                }
+            } catch (e) {
+                alert('申请失败');
+            }
+        },
+        
+        async toggleLike(item) {
+            try {
+                await fetch('/api/recommend/behavior/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        behavior_type: 'like',
+                        club_id: item.id
+                    })
+                });
+                item.liked = !item.liked;
+                alert(item.liked ? '已收藏' : '已取消收藏');
+            } catch (e) {
+                alert('操作失败');
+            }
+        },
+        
+        goToClub(clubId) {
+            window.location.href = `/clubs/${clubId}/`;
+        }
+    }
+});
+</script>
+{% endblock %}

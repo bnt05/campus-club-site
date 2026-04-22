@@ -1,0 +1,1140 @@
+from django.contrib import messages
+
+from django.contrib.auth import login
+
+from django.contrib.auth.decorators import login_required
+
+from django.core.paginator import Paginator
+
+from django.db.models import Avg, Count, Q
+
+from django.shortcuts import get_object_or_404, redirect, render
+
+from django.http import HttpResponse
+
+import datetime
+
+
+
+from .forms import (
+
+    ClubForm,
+
+    ClubRatingForm,
+
+    CrossSchoolEventForm,
+
+    EventCreateForm,
+
+    KnowledgeItemForm,
+
+    PostForm,
+
+    RegisterForm,
+
+)
+
+from .models import (
+
+    Club,
+
+    ClubRating,
+
+    CrossSchoolEvent,
+
+    KnowledgeCategory,
+
+    KnowledgeItem,
+
+    Membership,
+
+    Post,
+
+    PostLike,
+
+    PostComment,
+
+)
+
+
+
+
+
+def home(request):
+
+    # Ã¦ÂÂÃ¦Â?Ã¤Â¸ÂªÃ¦Â Â¡Ã¥ÂÂ­Ã¦Â´Â»Ã¥ÂÂ¨Ã¯Â¼ÂÃ¦ÂÂÃ¥ÂÂÃ¥Â¸ÂÃ¦ÂÂ¶Ã©ÂÂ´Ã¥ÂÂÃ¥ÂºÂ
+
+    latest_events = CrossSchoolEvent.objects.filter(is_public=True).order_by('-created_at')[:5]
+
+    # Ã§Â¤Â¾Ã¥ÂÂ¢Ã¥ÂÂÃ¨Â¡Â¨Ã¯Â¼ÂÃ¥Â±ÂÃ§Â¤ÂºÃ¥ÂÂÃ¥ÂÂ Ã¤Â¸ÂªÃ¯Â¼ÂÃ¦ÂÂÃ§ÂÂ­Ã¥ÂºÂ¦Ã¦ÂÂÃ¥ÂºÂÃ¯Â¼?
+
+    clubs = Club.objects.annotate(avg_score=Avg('ratings__score'), member_count=Count('members')).order_by('-created_at')[:6]
+
+    # Ã¦Â Â¡Ã¥ÂÂ­Ã¦Â´Â»Ã¥ÂÂ¨Ã¥ÂÂÃ¨Â¡Â¨Ã¯Â¼ÂÃ¥Â±ÂÃ§Â¤ÂºÃ¥ÂÂÃ¥ÂÂ Ã¤Â¸Âª
+
+    events = CrossSchoolEvent.objects.filter(is_public=True).order_by('-created_at')[:6]
+
+    # Ã§ÂÂ­Ã©ÂÂ¨Ã§Â¤Â¾Ã¥ÂÂ¢Ã¯Â¼ÂÃ¦ÂÂÃ¨Â¯ÂÃ¥ÂÂÃ¦ÂÂÃ¥ÂºÂÃ¯Â¼ÂÃ¥ÂÂÃ¥Â?Ã¤Â¸ÂªÃ¯Â¼Â
+
+    top_clubs = Club.objects.annotate(avg_score=Avg('ratings__score'), member_count=Count('members')).filter(avg_score__isnull=False).order_by('-avg_score')[:3]
+
+    # Ã§ÂÂ­Ã©ÂÂ¨Ã¦Â´Â»Ã¥ÂÂ¨Ã¯Â¼ÂÃ¦ÂÂÃ¥ÂÂÃ¤Â¸ÂÃ¤ÂºÂºÃ¦ÂÂ°Ã¦ÂÂÃ¥ÂºÂÃ¯Â¼ÂÃ¥ÂÂÃ¥Â?Ã¤Â¸ÂªÃ¯Â¼Â
+
+    hot_events = CrossSchoolEvent.objects.filter(is_public=True).annotate(p_cnt=Count('participants')).order_by('-p_cnt')[:3]
+
+    return render(request, 'clubs/home.html', {
+
+        'latest_events': latest_events,
+
+        'clubs': clubs,
+
+        'events': events,
+
+        'top_clubs': top_clubs,
+
+        'hot_events': hot_events,
+
+    })
+
+
+
+
+
+def my_clubs(request):
+
+    if not request.user.is_authenticated:
+
+        return redirect('login')
+
+    clubs = request.user.joined_clubs.annotate(avg_score=Avg('ratings__score')).all()
+
+    return render(request, 'clubs/my_clubs.html', {'clubs': clubs})
+
+
+
+
+
+def index(request):
+
+    query = request.GET.get('q', '').strip()
+
+    categories = request.GET.getlist('categories')
+
+    sort = request.GET.get('sort', 'hotness_desc')
+
+    
+
+    clubs = Club.objects.annotate(avg_score=Avg('ratings__score'), member_count=Count('members'))
+
+    
+
+    # Ã¦ÂÂÃ§Â´Â¢
+
+    if query:
+
+        clubs = clubs.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(category__icontains=query))
+
+    
+
+    # Ã§Â­ÂÃ©Â?
+
+    if categories:
+
+        clubs = clubs.filter(category__in=categories)
+
+    
+
+    # Ã¨Â®Â¡Ã§Â®ÂÃ¥ÂÂÃ¥Â­ÂÃ¦Â®ÂµÃ¦ÂÂÃ¥ÂºÂÃ¯Â¼ÂÃ¤Â¸ÂÃ¦ÂÂ¹Ã¥ÂÂquerysetÃ§Â»ÂÃ¦ÂÂÃ¯Â¼ÂÃ¤Â¿ÂÃ¨Â¯ÂÃ¥ÂÂÃ©Â¡ÂµÃ¦Â­Â£Ã¥Â¸Â¸Ã¯Â¼Â
+
+    hotness_map = {}
+
+    for club in clubs:
+
+        hotness_map[club.pk] = club.get_hotness()
+
+
+
+    if sort == 'created_asc':
+
+        clubs = clubs.order_by('created_at')
+
+    elif sort == 'created_desc':
+
+        clubs = clubs.order_by('-created_at')
+
+    elif sort == 'members_asc':
+
+        clubs = clubs.order_by('member_count')
+
+    elif sort == 'members_desc':
+
+        clubs = clubs.order_by('-member_count')
+
+    elif sort == 'hotness_asc':
+
+        clubs = list(clubs)
+
+        clubs.sort(key=lambda c: hotness_map[c.pk])
+
+    elif sort == 'hotness_desc':
+
+        clubs = list(clubs)
+
+        clubs.sort(key=lambda c: hotness_map[c.pk], reverse=True)
+
+    else:
+
+        clubs = clubs.order_by('-created_at')
+
+    
+
+    paginator = Paginator(clubs, 8)
+
+    page_number = request.GET.get('page')
+
+    page_obj = paginator.get_page(page_number)
+
+    
+
+    joined_clubs = list(request.user.joined_clubs.all()) if request.user.is_authenticated else []
+
+    joined_club_ids = [c.id for c in joined_clubs]
+
+    recommended_clubs = Club.objects.annotate(avg_score=Avg('ratings__score')).order_by('-avg_score')
+
+    if request.user.is_authenticated:
+
+        recommended_clubs = recommended_clubs.exclude(members=request.user)[:4]
+
+    else:
+
+        recommended_clubs = recommended_clubs[:4]
+
+    
+
+    return render(request, 'clubs/index.html', {
+
+        'page_obj': page_obj,
+
+        'query': query,
+
+        'categories': categories,
+
+        'sort': sort,
+
+        'joined_clubs': joined_clubs,
+
+        'joined_club_ids': joined_club_ids,
+
+        'recommended_clubs': recommended_clubs,
+
+        'category_choices': Club.CATEGORY_CHOICES,
+
+    })
+
+
+
+
+
+def register(request):
+
+    if request.user.is_authenticated:
+
+        return redirect('index')
+
+
+
+    if request.method == 'POST':
+
+        form = RegisterForm(request.POST)
+
+        if form.is_valid():
+
+            user = form.save()
+
+            login(request, user)
+
+            messages.success(request, 'Ã¦Â³Â¨Ã¥ÂÂÃ¦ÂÂÃ¥ÂÂÃ¯Â¼ÂÃ¥Â·Â²Ã§ÂÂ»Ã¥Â½ÂÃ£Â?)
+
+            return redirect('index')
+
+    else:
+
+        form = RegisterForm()
+
+
+
+    return render(request, 'clubs/register.html', {'form': form})
+
+
+
+
+
+@login_required
+
+def club_create(request):
+
+    if request.method == 'POST':
+
+        form = ClubForm(request.POST, request.FILES)
+
+        if form.is_valid():
+
+            club = form.save(commit=False)
+
+            club.creator = request.user
+
+            club._initial_creator = request.user
+
+            club.save()
+
+            messages.success(request, 'Ã§Â¤Â¾Ã¥ÂÂ¢Ã¥ÂÂÃ¥Â»ÂºÃ¦ÂÂÃ¥ÂÂÃ£Â?)
+
+            return redirect('club_detail', club_id=club.id)
+
+    else:
+
+        form = ClubForm()
+
+
+
+    return render(request, 'clubs/club_form.html', {'form': form, 'title': 'Ã¥ÂÂÃ¥Â»ÂºÃ§Â¤Â¾Ã¥ÂÂ¢'})
+
+
+
+
+
+@login_required
+
+def club_edit(request, club_id):
+
+    club = get_object_or_404(Club, id=club_id)
+
+    if club.creator != request.user:
+
+        messages.warning(request, 'Ã¥ÂÂªÃ¦ÂÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã¥ÂÂÃ¥Â»ÂºÃ¨ÂÂÃ¥ÂÂ¯Ã¤Â»Â¥Ã§Â¼ÂÃ¨Â¾ÂÃ§Â®ÂÃ¤Â»ÂÃ£Â?)
+
+        return redirect('club_detail', club_id=club.id)
+
+
+
+    if request.method == 'POST':
+
+        form = ClubForm(request.POST, request.FILES, instance=club)
+
+        if form.is_valid():
+
+            form.save()
+
+            messages.success(request, 'Ã§Â¤Â¾Ã¥ÂÂ¢Ã§Â®ÂÃ¤Â»ÂÃ¥Â·Â²Ã¦ÂÂ´Ã¦ÂÂ°Ã£Â?)
+
+            return redirect('club_detail', club_id=club.id)
+
+    else:
+
+        form = ClubForm(instance=club)
+
+
+
+    return render(request, 'clubs/club_form.html', {'form': form, 'title': 'Ã§Â¼ÂÃ¨Â¾ÂÃ§Â¤Â¾Ã¥ÂÂ¢'})
+
+
+
+
+
+@login_required
+
+def toggle_admin(request, club_id, user_id):
+
+    club = get_object_or_404(Club, id=club_id)
+
+    if club.creator != request.user:
+
+        messages.warning(request, 'Ã¥ÂÂªÃ¦ÂÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã¥ÂÂÃ¥Â»ÂºÃ¨ÂÂÃ¥ÂÂ¯Ã¤Â»Â¥Ã¥ÂÂÃ©ÂÂÃ§Â®Â¡Ã§ÂÂÃ¥ÂÂÃ£Â?)
+
+        return redirect('club_detail', club_id=club.id)
+
+
+
+    member = get_object_or_404(club.members, id=user_id)
+
+    if member == club.creator:
+
+        messages.warning(request, 'Ã¥ÂÂÃ¥Â»ÂºÃ¨ÂÂÃ¦ÂÂ Ã©ÂÂÃ¥ÂÂÃ©ÂÂÃ§Â®Â¡Ã§ÂÂÃ¥ÂÂÃ£Â?)
+
+        return redirect('club_detail', club_id=club.id)
+
+
+
+    membership = club.membership(member)
+
+    if membership:
+
+        membership.is_admin = not membership.is_admin
+
+        membership.save()
+
+        status = 'Ã¥Â·Â²Ã¨Â®Â¾Ã¤Â¸ÂºÃ§Â®Â¡Ã§ÂÂÃ¥ÂÂ' if membership.is_admin else 'Ã¥Â·Â²Ã¥ÂÂÃ¦Â¶ÂÃ§Â®Â¡Ã§ÂÂÃ¥ÂÂ'
+
+        messages.success(request, f'{member.username}{status}Ã£Â?)
+
+    return redirect('club_detail', club_id=club.id)
+
+
+
+
+
+def club_detail(request, club_id):
+
+    club = get_object_or_404(Club, id=club_id)
+
+    posts = club.posts.select_related('author').prefetch_related('likes', 'comments__author').all()
+
+    paginator = Paginator(posts, 5)
+
+    page_number = request.GET.get('page')
+
+    posts_page = paginator.get_page(page_number)
+
+    is_member = request.user.is_authenticated and club.members.filter(id=request.user.id).exists()
+
+    is_admin = request.user.is_authenticated and club.is_admin(request.user)
+
+    is_owner = request.user.is_authenticated and club.creator == request.user
+
+    memberships = club.membership_set.select_related('user').all()
+
+    post_form = PostForm() if is_member else None
+
+    rating = None
+
+    rating_form = None
+
+    if request.user.is_authenticated:
+
+        rating = ClubRating.objects.filter(club=club, user=request.user).first()
+
+        rating_form = ClubRatingForm(instance=rating, club=club, user=request.user)
+
+    cross_events = club.cross_events.filter(is_public=True)
+
+    # Ã¨ÂÂ·Ã¥ÂÂÃ§ÂÂ¨Ã¦ÂÂ·Ã¥Â·Â²Ã§ÂÂ¹Ã¨ÂµÂÃ§ÂÂÃ¥ÂÂ¨Ã¦ÂÂIDÃ¥ÂÂÃ¨Â¡Â¨
+
+    liked_post_ids = []
+
+    if request.user.is_authenticated:
+
+        liked_post_ids = list(PostLike.objects.filter(user=request.user, post__club=club).values_list('post_id', flat=True))
+
+    return render(
+
+        request,
+
+        'clubs/club_detail.html',
+
+        {
+
+            'club': club,
+
+            'posts': posts_page,
+
+            'is_member': is_member,
+
+            'is_admin': is_admin,
+
+            'is_owner': is_owner,
+
+            'memberships': memberships,
+
+            'post_form': post_form,
+
+            'rating_form': rating_form,
+
+            'ratings': club.ratings.select_related('user').all(),
+
+            'knowledge_categories': club.knowledge_categories.prefetch_related('items').all(),
+
+            'liked_post_ids': liked_post_ids,
+
+            'cross_events': cross_events,
+
+        },
+
+    )
+
+
+
+
+
+@login_required
+
+def club_join(request, club_id):
+
+    club = get_object_or_404(Club, id=club_id)
+
+    club.add_member(request.user)
+
+    messages.success(request, f'Ã¥Â·Â²Ã¥ÂÂ Ã¥ÂÂ¥Ã§Â¤Â¾Ã¥ÂÂ¢Ã¢ÂÂ{club.name}Ã¢ÂÂÃ£Â?)
+
+    return redirect('club_detail', club_id=club.id)
+
+
+
+
+
+@login_required
+
+def club_leave(request, club_id):
+
+    club = get_object_or_404(Club, id=club_id)
+
+    membership = club.membership(request.user)
+
+    if membership:
+
+        membership.delete()
+
+    messages.success(request, f'Ã¥Â·Â²Ã©ÂÂÃ¥ÂÂºÃ§Â¤Â¾Ã¥ÂÂ¢Ã¢ÂÂ{club.name}Ã¢ÂÂÃ£Â?)
+
+    return redirect('club_detail', club_id=club.id)
+
+
+
+
+
+@login_required
+
+def post_create(request, club_id):
+
+    club = get_object_or_404(Club, id=club_id)
+
+    if not club.members.filter(id=request.user.id).exists():
+
+        messages.warning(request, 'Ã¤Â»ÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã¦ÂÂÃ¥ÂÂÃ¥ÂÂ¯Ã¤Â»Â¥Ã¥ÂÂÃ¥Â¸ÂÃ¥ÂÂ¨Ã¦ÂÂÃ£Â?)
+
+        return redirect('club_detail', club_id=club.id)
+
+
+
+    if request.method == 'POST':
+
+        form = PostForm(request.POST, request.FILES)
+
+        if form.is_valid():
+
+            post = form.save(commit=False)
+
+            post.club = club
+
+            post.author = request.user
+
+            post.save()
+
+            messages.success(request, 'Ã¥ÂÂ¨Ã¦ÂÂÃ¥Â·Â²Ã¥ÂÂÃ¥Â¸ÂÃ£Â?)
+
+            return redirect('club_detail', club_id=club.id)
+
+    else:
+
+        form = PostForm()
+
+
+
+    return render(request, 'clubs/club_detail.html', {
+
+        'club': club,
+
+        'post_form': form,
+
+        'is_member': True,
+
+        'posts': club.posts.select_related('author').prefetch_related('likes', 'comments__author').all(),
+
+        'is_admin': club.is_admin(request.user),
+
+        'is_owner': club.creator == request.user,
+
+        'memberships': club.membership_set.select_related('user').all(),
+
+        'rating_form': ClubRatingForm(instance=ClubRating.objects.filter(club=club, user=request.user).first(), club=club, user=request.user),
+
+        'ratings': club.ratings.select_related('user').all(),
+
+        'knowledge_categories': club.knowledge_categories.prefetch_related('items').all(),
+
+        'cross_events': club.cross_events.filter(is_public=True),
+
+    })
+
+
+
+
+
+@login_required
+
+def knowledge_item_create(request, club_id):
+
+    club = get_object_or_404(Club, id=club_id)
+
+    if not club.members.filter(id=request.user.id).exists():
+
+        messages.warning(request, 'Ã¤Â»ÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã¦ÂÂÃ¥ÂÂÃ¥ÂÂ¯Ã¤Â»Â¥Ã¦Â·Â»Ã¥ÂÂ Ã§ÂÂ¥Ã¨Â¯ÂÃ¥ÂÂ±Ã¤ÂºÂ«Ã¥ÂÂÃ¥Â®Â¹Ã£Â?)
+
+        return redirect('club_detail', club_id=club.id)
+
+
+
+    if not club.knowledge_categories.exists():
+
+        KnowledgeCategory.objects.create(club=club, name='Ã©Â»ÂÃ¨Â®Â¤Ã¥ÂÂÃ§Â±Â»')
+
+
+
+    if request.method == 'POST':
+
+        form = KnowledgeItemForm(request.POST, request.FILES)
+
+        form.fields['category'].queryset = club.knowledge_categories.all()
+
+        if form.is_valid():
+
+            item = form.save(commit=False)
+
+            item.uploaded_by = request.user
+
+            item.save()
+
+            messages.success(request, 'Ã§ÂÂ¥Ã¨Â¯ÂÃ¦ÂÂÃ¦Â¡Â£Ã¥Â·Â²Ã¦Â·Â»Ã¥ÂÂ Ã£Â?)
+
+            return redirect('club_detail', club_id=club.id)
+
+    else:
+
+        form = KnowledgeItemForm()
+
+        form.fields['category'].queryset = club.knowledge_categories.all()
+
+
+
+    return render(request, 'clubs/knowledge_item_form.html', {
+
+        'club': club,
+
+        'form': form,
+
+        'title': 'Ã¦Â·Â»Ã¥ÂÂ Ã§ÂÂ¥Ã¨Â¯ÂÃ¦ÂÂÃ¦Â¡Â£',
+
+    })
+
+
+
+
+
+@login_required
+
+def cross_school_event_create(request, club_id):
+
+    club = get_object_or_404(Club, id=club_id)
+
+    if not club.is_admin(request.user) and club.creator != request.user:
+
+        messages.warning(request, 'Ã¤Â»ÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã§Â®Â¡Ã§ÂÂÃ¥ÂÂÃ¥ÂÂ¯Ã¤Â»Â¥Ã¥ÂÂÃ¥Â¸ÂÃ¨Â·Â¨Ã¦Â Â¡Ã¦Â´Â»Ã¥ÂÂ¨Ã£Â?)
+
+        return redirect('club_detail', club_id=club.id)
+
+
+
+    if request.method == 'POST':
+
+        form = CrossSchoolEventForm(request.POST, request.FILES)
+
+        if form.is_valid():
+
+            event = form.save(commit=False)
+
+            event.club = club
+
+            event.save()
+
+            messages.success(request, 'Ã¨Â·Â¨Ã¦Â Â¡Ã¦Â´Â»Ã¥ÂÂ¨Ã¥Â·Â²Ã¥ÂÂÃ¥Â¸ÂÃ£Â?)
+
+            return redirect('club_detail', club_id=club.id)
+
+    else:
+
+        form = CrossSchoolEventForm()
+
+
+
+    return render(request, 'clubs/event_create.html', {
+
+        'club': club,
+
+        'form': form,
+
+        'title': 'Ã¥ÂÂÃ¥Â¸ÂÃ¨Â·Â¨Ã¦Â Â¡Ã¦Â´Â»Ã¥ÂÂ¨',
+
+    })
+
+
+
+
+
+@login_required
+
+def event_create(request):
+
+    if request.method == 'POST':
+
+        form = EventCreateForm(request.POST, request.FILES, user=request.user)
+
+        if form.is_valid():
+
+            event = form.save(commit=False)
+
+            club = form.cleaned_data.get('club')
+
+            scope = form.cleaned_data.get('scope')
+
+            
+
+            # Ã©ÂªÂÃ¨Â¯ÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã©ÂÂÃ¦ÂÂ©
+
+            if scope == 'club_activity':
+
+                if not club:
+
+                    messages.error(request, 'Ã¨Â¯Â·Ã©ÂÂÃ¦ÂÂ©Ã¥ÂÂÃ¥Â¸ÂÃ¦Â´Â»Ã¥ÂÂ¨Ã§ÂÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã£Â?)
+
+                    return render(request, 'clubs/event_create.html', {
+
+                        'form': form,
+
+                        'title': 'Ã¥ÂÂÃ¥Â»ÂºÃ¦Â´Â»Ã¥ÂÂ¨',
+
+                    })
+
+                if club.creator != request.user:
+
+                    messages.error(request, 'Ã¥ÂÂªÃ¨ÂÂ½Ã¤Â¸ÂºÃ¨ÂÂªÃ¥Â·Â±Ã¥ÂÂÃ¥Â»ÂºÃ§ÂÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã¥ÂÂÃ¥Â¸ÂÃ¦Â´Â»Ã¥ÂÂ¨Ã£Â?)
+
+                    return render(request, 'clubs/event_create.html', {
+
+                        'form': form,
+
+                        'title': 'Ã¥ÂÂÃ¥Â»ÂºÃ¦Â´Â»Ã¥ÂÂ¨',
+
+                    })
+
+            else:
+
+                # Ã¥ÂÂ¶Ã¤Â»ÂÃ§Â±Â»Ã¥ÂÂÃ§ÂÂÃ¦Â´Â»Ã¥ÂÂ¨Ã¤Â¹ÂÃ©ÂÂÃ¨Â¦ÂÃ©ÂÂÃ¦ÂÂ©Ã§Â¤Â¾Ã¥ÂÂ¢
+
+                if not club:
+
+                    messages.error(request, 'Ã¨Â¯Â·Ã©ÂÂÃ¦ÂÂ©Ã¥ÂÂÃ¥Â¸ÂÃ¦Â´Â»Ã¥ÂÂ¨Ã§ÂÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã£Â?)
+
+                    return render(request, 'clubs/event_create.html', {
+
+                        'form': form,
+
+                        'title': 'Ã¥ÂÂÃ¥Â»ÂºÃ¦Â´Â»Ã¥ÂÂ¨',
+
+                    })
+
+            
+
+            event.club = club
+
+            event.save()
+
+            messages.success(request, 'Ã¦Â Â¡Ã¥ÂÂ­Ã¦Â´Â»Ã¥ÂÂ¨Ã¥ÂÂÃ¥Â»ÂºÃ¦ÂÂÃ¥ÂÂÃ£Â?)
+
+            return redirect('event_detail', event_id=event.id)
+
+    else:
+
+        form = EventCreateForm(user=request.user)
+
+
+
+    return render(request, 'clubs/event_create.html', {
+
+        'form': form,
+
+        'title': 'Ã¥ÂÂÃ¥Â»ÂºÃ¦Â´Â»Ã¥ÂÂ¨',
+
+    })
+
+
+
+
+
+@login_required
+
+def event_edit(request, event_id):
+
+    event = get_object_or_404(CrossSchoolEvent, id=event_id)
+
+    if not request.user.is_authenticated or (event.club.creator != request.user and not event.club.is_admin(request.user)):
+
+        messages.warning(request, 'Ã¥ÂÂªÃ¦ÂÂÃ¦Â´Â»Ã¥ÂÂ¨Ã¥ÂÂÃ¥Â¸ÂÃ¨ÂÂÃ¦ÂÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã§Â®Â¡Ã§ÂÂÃ¥ÂÂÃ¥ÂÂ¯Ã¤Â»Â¥Ã§Â¼ÂÃ¨Â¾ÂÃ¨Â¯Â¥Ã¦Â´Â»Ã¥ÂÂ¨Ã£Â?)
+
+        return redirect('event_detail', event_id=event.id)
+
+
+
+    if request.method == 'POST':
+
+        form = CrossSchoolEventForm(request.POST, request.FILES, instance=event)
+
+        if form.is_valid():
+
+            form.save()
+
+            messages.success(request, 'Ã¦Â´Â»Ã¥ÂÂ¨Ã¤Â¿Â¡Ã¦ÂÂ¯Ã¥Â·Â²Ã¦ÂÂ´Ã¦ÂÂ°Ã£Â?)
+
+            return redirect('event_detail', event_id=event.id)
+
+    else:
+
+        form = CrossSchoolEventForm(instance=event)
+
+
+
+    return render(request, 'clubs/event_create.html', {
+
+        'form': form,
+
+        'title': 'Ã§Â¼ÂÃ¨Â¾ÂÃ¦Â´Â»Ã¥ÂÂ¨',
+
+    })
+
+
+
+
+
+@login_required
+
+def my_events(request):
+
+    joined_events = request.user.joined_events.filter(is_public=True).order_by('-created_at')
+
+    managed_clubs = Club.objects.filter(
+
+        Q(creator=request.user) | Q(membership__user=request.user, membership__is_admin=True)
+
+    ).distinct()
+
+    published_events = CrossSchoolEvent.objects.filter(club__in=managed_clubs).order_by('-created_at')
+
+    return render(request, 'clubs/my_events.html', {
+
+        'joined_events': joined_events,
+
+        'published_events': published_events,
+
+    })
+
+
+
+
+
+@login_required
+
+def event_join(request, event_id):
+
+    event = get_object_or_404(CrossSchoolEvent, id=event_id, is_public=True)
+
+    if event.is_full and request.user not in event.participants.all():
+
+        messages.warning(request, 'Ã¨Â¯Â¥Ã¦Â´Â»Ã¥ÂÂ¨Ã¦ÂÂ¥Ã¥ÂÂÃ¤ÂºÂºÃ¦ÂÂ°Ã¥Â·Â²Ã¨Â¾Â¾Ã¤Â¸ÂÃ©ÂÂÃ£Â?)
+
+    else:
+
+        event.participants.add(request.user)
+
+        messages.success(request, 'Ã¥Â·Â²Ã¦ÂÂ¥Ã¥ÂÂÃ¦Â´Â»Ã¥ÂÂ¨Ã£Â?)
+
+    return redirect('event_detail', event_id=event.id)
+
+
+
+
+
+@login_required
+
+def event_leave(request, event_id):
+
+    event = get_object_or_404(CrossSchoolEvent, id=event_id, is_public=True)
+
+    event.participants.remove(request.user)
+
+    messages.success(request, 'Ã¥Â·Â²Ã¥ÂÂÃ¦Â¶ÂÃ¦ÂÂ¥Ã¥ÂÂÃ£Â?)
+
+    return redirect('event_detail', event_id=event.id)
+
+
+
+
+
+def event_detail(request, event_id):
+
+    event = get_object_or_404(CrossSchoolEvent, id=event_id, is_public=True)
+
+    is_joined = request.user.is_authenticated and event.participants.filter(id=request.user.id).exists()
+
+    can_edit = request.user.is_authenticated and (event.club.creator == request.user or event.club.is_admin(request.user))
+
+    return render(request, 'clubs/event_detail.html', {
+
+        'event': event,
+
+        'is_joined': is_joined,
+
+        'can_edit': can_edit,
+
+    })
+
+
+
+
+
+def events_list(request):
+
+    query = request.GET.get('q', '').strip()
+
+    categories = request.GET.getlist('categories')
+
+    scopes = request.GET.getlist('scopes')
+
+    sort = request.GET.get('sort', 'created_desc')
+
+
+
+    events = CrossSchoolEvent.objects.filter(is_public=True)
+
+
+
+    if query:
+
+        events = events.filter(
+
+            Q(title__icontains=query)
+
+            | Q(description__icontains=query)
+
+            | Q(partner_school__icontains=query)
+
+            | Q(club__name__icontains=query)
+
+        )
+
+
+
+    if categories:
+
+        events = events.filter(category__in=categories)
+
+
+
+    if scopes:
+
+        events = events.filter(scope__in=scopes)
+
+
+
+    if sort == 'start_asc':
+
+        events = events.order_by('start_date')
+
+    elif sort == 'start_desc':
+
+        events = events.order_by('-start_date')
+
+    elif sort == 'participants_asc':
+
+        events = events.annotate(participant_count=Count('participants')).order_by('participant_count')
+
+    elif sort == 'participants_desc':
+
+        events = events.annotate(participant_count=Count('participants')).order_by('-participant_count')
+
+    elif sort == 'created_asc':
+
+        events = events.order_by('created_at')
+
+    else:
+
+        events = events.order_by('-created_at')
+
+
+
+    paginator = Paginator(events, 8)
+
+    page_number = request.GET.get('page')
+
+    page_obj = paginator.get_page(page_number)
+
+
+
+    return render(request, 'clubs/events_list.html', {
+
+        'page_obj': page_obj,
+
+        'query': query,
+
+        'categories': categories,
+
+        'scopes': scopes,
+
+        'sort': sort,
+
+        'category_choices': Club.CATEGORY_CHOICES,
+
+        'scope_choices': CrossSchoolEvent.EVENT_SCOPE_CHOICES,
+
+    })
+
+
+
+
+
+@login_required
+
+def post_like(request, club_id, post_id):
+
+    post = get_object_or_404(Post, id=post_id)
+
+    like, created = PostLike.objects.get_or_create(post=post, user=request.user)
+
+    if not created:
+
+        like.delete()
+
+    return redirect('club_detail', club_id=post.club.id)
+
+
+
+
+
+@login_required
+
+def post_comment(request, club_id, post_id):
+
+    post = get_object_or_404(Post, id=post_id)
+
+    if request.method == 'POST':
+
+        content = request.POST.get('content', '').strip()
+
+        if content:
+
+            PostComment.objects.create(post=post, author=request.user, content=content)
+
+    return redirect('club_detail', club_id=post.club.id)
+
+
+
+
+
+@login_required
+
+def post_pin(request, club_id, post_id):
+
+    post = get_object_or_404(Post, id=post_id)
+
+    club = post.club
+
+    # Ã¥ÂÂªÃ¦ÂÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã¥ÂÂÃ¥Â»ÂºÃ¨ÂÂÃ¥ÂÂ¯Ã¤Â»Â¥Ã§Â½Â®Ã©Â¡?Ã¥ÂÂÃ¦Â¶ÂÃ§Â½Â®Ã©Â¡Â¶
+
+    if club.creator != request.user:
+
+        messages.warning(request, 'Ã¥ÂÂªÃ¦ÂÂÃ§Â¤Â¾Ã¥ÂÂ¢Ã¥ÂÂÃ¥Â»ÂºÃ¨ÂÂÃ¥ÂÂ¯Ã¤Â»Â¥Ã§Â½Â®Ã©Â¡Â¶Ã¥ÂÂ¨Ã¦ÂÂÃ£Â?)
+
+        return redirect('club_detail', club_id=club.id)
+
+    
+
+    if post.is_pinned:
+
+        # Ã¥ÂÂÃ¦Â¶ÂÃ§Â½Â®Ã©Â¡Â¶
+
+        post.is_pinned = False
+
+        post.pinned_at = None
+
+        post.save()
+
+        messages.success(request, 'Ã¥Â·Â²Ã¥ÂÂÃ¦Â¶ÂÃ§Â½Â®Ã©Â¡Â¶Ã£Â?)
+
+    else:
+
+        # Ã§Â½Â®Ã©Â¡Â¶ - Ã¥ÂÂÃ¥ÂÂÃ¦Â¶ÂÃ¨Â¯Â¥Ã§Â¤Â¾Ã¥ÂÂ¢Ã¥ÂÂ¶Ã¤Â»ÂÃ§Â½Â®Ã©Â¡Â¶Ã¥ÂÂ¨Ã¦Â?
+
+        Post.objects.filter(club=club, is_pinned=True).update(is_pinned=False, pinned_at=None)
+
+        post.is_pinned = True
+
+        post.pinned_at = timezone.now()
+
+        post.save()
+
+        messages.success(request, 'Ã¥Â·Â²Ã§Â½Â®Ã©Â¡Â¶Ã¨Â¯Â¥Ã¥ÂÂ¨Ã¦ÂÂÃ£Â?)
+
+    return redirect('club_detail', club_id=club.id)
+
+
+
+
+
+def ai_assistant(request):
+
+    """AIÃ¦ÂÂºÃ¨ÂÂ½Ã¥ÂÂ©Ã¦ÂÂÃ©Â¡ÂµÃ©ÂÂ¢"""
+
+    return render(request, 'clubs/ai_assistant.html')
+
+
+
+
+
+def mbti_test(request):
+
+    """MBTIÃ¦ÂµÂÃ¨Â¯ÂÃ©Â¡ÂµÃ©ÂÂ¢"""
+
+    from clubs.ai_config import MBTI_QUESTIONS
+
+    profile = getattr(request.user, 'profile', None) if request.user.is_authenticated else None
+
+    user_mbti = profile.mbti if profile else None
+
+    return render(request, 'clubs/mbti_test.html', {
+
+        'questions': MBTI_QUESTIONS,
+
+        'user_mbti': user_mbti
+
+    })
+
+
+
+
+
+def event_ical(request, event_id):
+
+    event = get_object_or_404(CrossSchoolEvent, id=event_id, is_public=True)
+
+    dtstamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%SZ')
+
+    dtstart = event.start_date.strftime('%Y%m%d')
+
+    dtend = (event.end_date + datetime.timedelta(days=1)).strftime('%Y%m%d')
+
+    ical = f"""BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CampusClub//Event//CN\nBEGIN:VEVENT\nUID:event-{event.id}@campusclub\nDTSTAMP:{dtstamp}\nDTSTART;VALUE=DATE:{dtstart}\nDTEND;VALUE=DATE:{dtend}\nSUMMARY:{event.title}\nDESCRIPTION:{event.description.replace('\n', ' ')}\nLOCATION:{event.location or ''}\nEND:VEVENT\nEND:VCALENDAR\n"""
+
+    response = HttpResponse(ical, content_type='text/calendar')
+
+    response['Content-Disposition'] = f'attachment; filename=event_{event.id}.ics'
+
+    return response
+

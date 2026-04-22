@@ -1,0 +1,770 @@
+{% extends 'clubs/base.html' %}
+{% load static %}
+
+{% block title %}MBTI性格测试 - 校园社团{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #29B6F6;
+        --primary-light: #4FC3F7;
+        --primary-dark: #0288D1;
+        --secondary: #4DB6AC;
+        --accent: #81C784;
+        --gradient: linear-gradient(135deg, #29B6F6 0%, #4DB6AC 100%);
+        --gradient-light: linear-gradient(135deg, #E3F2FD 0%, #F1F8E9 100%);
+        --bg-light: #F5F9FC;
+        --bg-card: #FFFFFF;
+        --text-primary: #2C3E50;
+        --text-secondary: #5D6D7E;
+        --text-muted: #95A5B6;
+        --border-color: #E1F0F8;
+        --shadow-sm: 0 2px 8px rgba(41, 182, 246, 0.08);
+        --shadow-md: 0 4px 16px rgba(41, 182, 246, 0.12);
+        --shadow-lg: 0 8px 32px rgba(41, 182, 246, 0.15);
+        --radius: 20px;
+        --radius-sm: 12px;
+    }
+
+    body {
+        background: var(--bg-light);
+    }
+
+    .mbti-page {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 40px 20px 60px;
+    }
+
+    /* Header */
+    .mbti-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .mbti-icon {
+        width: 90px;
+        height: 90px;
+        background: var(--gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.8rem;
+        margin: 0 auto 22px;
+        box-shadow: var(--shadow-lg);
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+
+    .mbti-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+    }
+
+    .mbti-header p {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+    }
+
+    /* Card */
+    .mbti-card {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        padding: 44px;
+        border: 1px solid var(--border-color);
+    }
+
+    /* Intro */
+    .intro-section {
+        text-align: center;
+        padding: 20px 0;
+    }
+
+    .intro-section h2 {
+        color: var(--text-primary);
+        margin-bottom: 18px;
+    }
+
+    .intro-section > p {
+        color: var(--text-secondary);
+        line-height: 1.8;
+        margin-bottom: 24px;
+    }
+
+    .dimension-badges {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin: 28px 0;
+    }
+
+    .dimension-badge {
+        background: var(--gradient-light);
+        padding: 10px 18px;
+        border-radius: 24px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+
+    .test-info {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin-top: 24px;
+    }
+
+    .btn-start {
+        background: var(--gradient);
+        color: white;
+        padding: 18px 52px;
+        font-size: 1.1rem;
+        border-radius: 28px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        box-shadow: var(--shadow-md);
+        margin-top: 24px;
+    }
+
+    .btn-start:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    /* Progress */
+    .progress-wrapper {
+        margin-bottom: 32px;
+    }
+
+    .progress-bar {
+        background: var(--border-color);
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .progress-fill {
+        background: var(--gradient);
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+    .progress-text {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    /* Questions */
+    .question-container {
+        display: none;
+        animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .question-container.active {
+        display: block;
+    }
+
+    .dimension-label {
+        display: inline-block;
+        background: var(--gradient);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 14px;
+    }
+
+    .question-number {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .question-text {
+        font-size: 1.25rem;
+        color: var(--text-primary);
+        margin-bottom: 28px;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    .options {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .option {
+        display: flex;
+        align-items: center;
+        padding: 20px 24px;
+        background: var(--bg-light);
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+
+    .option:hover {
+        border-color: var(--primary-light);
+        background: white;
+    }
+
+    .option.selected {
+        border-color: var(--primary);
+        background: white;
+        box-shadow: 0 0 0 3px rgba(41, 182, 246, 0.15);
+    }
+
+    .option-key {
+        width: 42px;
+        height: 42px;
+        background: var(--gradient);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-right: 16px;
+        flex-shrink: 0;
+    }
+
+    .option-text {
+        flex: 1;
+        color: var(--text-primary);
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    /* Buttons */
+    .btn-area {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 36px;
+        padding-top: 28px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn {
+        padding: 14px 32px;
+        border-radius: 24px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-prev {
+        background: var(--bg-light);
+        color: var(--text-secondary);
+    }
+
+    .btn-prev:hover:not(:disabled) {
+        background: var(--border-color);
+    }
+
+    .btn-prev:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .btn-next {
+        background: var(--gradient);
+        color: white;
+    }
+
+    .btn-next:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-next:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Result */
+    .result-container {
+        display: none;
+        text-align: center;
+    }
+
+    .result-container.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .result-mbti {
+        font-size: 5rem;
+        font-weight: 800;
+        background: var(--gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 16px 0;
+        letter-spacing: 6px;
+    }
+
+    .result-name {
+        font-size: 1.8rem;
+        color: var(--text-primary);
+        margin-bottom: 14px;
+        font-weight: 700;
+    }
+
+    .result-description {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        line-height: 1.8;
+        max-width: 520px;
+        margin: 0 auto 28px;
+    }
+
+    .result-suggestions {
+        background: var(--gradient-light);
+        padding: 22px;
+        border-radius: var(--radius-sm);
+        margin: 24px auto;
+        max-width: 420px;
+    }
+
+    .result-suggestions h4 {
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        font-size: 1rem;
+    }
+
+    .result-suggestions ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        color: var(--text-secondary);
+    }
+
+    .result-suggestions li {
+        padding: 6px 0;
+    }
+
+    .result-dimensions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        max-width: 500px;
+        margin: 0 auto 32px;
+    }
+
+    .dimension-item {
+        background: var(--bg-light);
+        padding: 18px;
+        border-radius: var(--radius-sm);
+        text-align: left;
+    }
+
+    .dimension-label-text {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+
+    .dimension-value {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .result-clubs {
+        margin: 24px 0;
+    }
+
+    .result-clubs h4 {
+        color: var(--text-primary);
+        margin-bottom: 16px;
+    }
+
+    .club-tags {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .club-tag {
+        background: var(--gradient);
+        color: white;
+        padding: 12px 22px;
+        border-radius: 24px;
+        font-size: 0.95rem;
+    }
+
+    .result-actions {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 32px;
+    }
+
+    .result-actions a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 28px;
+        border-radius: 24px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.25s ease;
+    }
+
+    .result-actions .btn-primary {
+        background: var(--gradient);
+        color: white;
+    }
+
+    .result-actions .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: white;
+    }
+
+    .result-actions .btn-secondary {
+        background: var(--bg-light);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+
+    .result-actions .btn-secondary:hover {
+        background: var(--border-color);
+    }
+
+    .user-mbti-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--gradient-light);
+        padding: 12px 22px;
+        border-radius: 24px;
+        margin-bottom: 24px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .user-mbti-badge strong {
+        background: var(--gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+    }
+
+    @media (max-width: 600px) {
+        .mbti-card {
+            padding: 28px 20px;
+        }
+        
+        .result-dimensions {
+            grid-template-columns: 1fr;
+        }
+        
+        .result-mbti {
+            font-size: 4rem;
+        }
+        
+        .btn-area {
+            flex-direction: column-reverse;
+            gap: 12px;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .result-actions {
+            flex-direction: column;
+        }
+
+        .result-actions a {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mbti-page">
+    <div class="mbti-header">
+        <div class="mbti-icon">🧪</div>
+        <h1>MBTI性格测试</h1>
+        <p>探索你的性格特点，发现与你最契合的社团</p>
+    </div>
+    
+    <div class="mbti-card">
+        {% if user_mbti %}
+        <div class="user-mbti-badge">
+            <span>📌 你已测试过MBTI：</span>
+            <strong>{{ user_mbti }}</strong>
+            <span>，可以重新测试更新结果</span>
+        </div>
+        {% endif %}
+        
+        <!-- 介绍页面 -->
+        <div class="intro-section" id="introSection">
+            <div class="mbti-icon" style="width:70px;height:70px;font-size:2.2rem;margin-bottom:24px;">💡</div>
+            <h2>关于MBTI性格测试</h2>
+            <p>
+                MBTI（Myers-Briggs Type Indicator）是一种性格分类工具，<br>
+                通过4个维度描述你的心理偏好，帮助你更好地了解自己。
+            </p>
+            <div class="dimension-badges">
+                <span class="dimension-badge">E/I · 外向/内向</span>
+                <span class="dimension-badge">S/N · 感觉/直觉</span>
+                <span class="dimension-badge">T/F · 思考/情感</span>
+                <span class="dimension-badge">J/P · 判断/知觉</span>
+            </div>
+            <p class="test-info">测试共 {{ questions|length }} 道选择题，预计用时 2-3 分钟</p>
+            <button class="btn-start" onclick="startTest()">开始测试 →</button>
+        </div>
+        
+        <div class="progress-wrapper" id="progressWrapper" style="display:none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="progressText">第 1 题 / 共 {{ questions|length }} 题</div>
+        </div>
+        
+        <form id="mbtiForm" style="display:none;">
+            {% for question in questions %}
+            <div class="question-container" data-question="{{ forloop.counter }}" data-dimension="{{ question.dimension }}">
+                <div class="dimension-label">{{ question.dimension }}</div>
+                <div class="question-number">问题 {{ forloop.counter }} / {{ questions|length }}</div>
+                <div class="question-text">{{ question.question }}</div>
+                <div class="options">
+                    <div class="option" data-key="{{ question.options.0.key }}" onclick="selectOption(this, '{{ forloop.counter }}')">
+                        <div class="option-key">{{ question.options.0.key }}</div>
+                        <div class="option-text">{{ question.options.0.text }}</div>
+                    </div>
+                    <div class="option" data-key="{{ question.options.1.key }}" onclick="selectOption(this, '{{ forloop.counter }}')">
+                        <div class="option-key">{{ question.options.1.key }}</div>
+                        <div class="option-text">{{ question.options.1.text }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="result-container" id="resultContainer"></div>
+            
+            <div class="btn-area" id="btnArea">
+                <button type="button" class="btn btn-prev" id="prevBtn" disabled onclick="prevQuestion()">
+                    ← 上一题
+                </button>
+                <button type="button" class="btn btn-next" id="nextBtn" disabled onclick="nextQuestion()">
+                    下一题 →
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentQuestion = 1;
+    const totalQuestions = {{ questions|length }};
+    const answers = {};
+    
+    function startTest() {
+        document.getElementById('introSection').style.display = 'none';
+        document.getElementById('progressWrapper').style.display = 'block';
+        document.getElementById('mbtiForm').style.display = 'block';
+        showQuestion(1);
+        updateProgress();
+    }
+    
+    function updateProgress() {
+        const progress = ((currentQuestion - 1) / totalQuestions) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('progressText').textContent = `第 ${currentQuestion} 题 / 共 ${totalQuestions} 题`;
+        
+        document.getElementById('prevBtn').disabled = currentQuestion === 1;
+        
+        if (currentQuestion === totalQuestions) {
+            document.getElementById('nextBtn').textContent = '查看结果 →';
+            document.getElementById('nextBtn').disabled = !answers[currentQuestion];
+        } else {
+            document.getElementById('nextBtn').textContent = '下一题 →';
+            document.getElementById('nextBtn').disabled = !answers[currentQuestion];
+        }
+    }
+    
+    function selectOption(element, questionNum) {
+        const parent = element.parentElement;
+        parent.querySelectorAll('.option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        
+        element.classList.add('selected');
+        answers[questionNum] = element.dataset.key;
+        answers[questionNum + '_dimension'] = element.closest('.question-container').dataset.dimension;
+        
+        updateProgress();
+    }
+    
+    function showQuestion(num) {
+        document.querySelectorAll('.question-container').forEach(q => {
+            q.classList.remove('active');
+        });
+        document.querySelector(`.question-container[data-question="${num}"]`).classList.add('active');
+        
+        if (answers[num]) {
+            const qContainer = document.querySelector(`.question-container[data-question="${num}"]`);
+            qContainer.querySelectorAll('.option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.key === answers[num]);
+            });
+        }
+    }
+    
+    function nextQuestion() {
+        if (currentQuestion < totalQuestions) {
+            currentQuestion++;
+            showQuestion(currentQuestion);
+            updateProgress();
+        } else {
+            submitTest();
+        }
+    }
+    
+    function prevQuestion() {
+        if (currentQuestion > 1) {
+            currentQuestion--;
+            showQuestion(currentQuestion);
+            updateProgress();
+        }
+    }
+    
+    async function submitTest() {
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('progressText').textContent = '正在分析你的性格...';
+        document.getElementById('btnArea').style.display = 'none';
+        
+        try {
+            const response = await fetch('/api/ai/mbti/submit/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ answers: answers })
+            });
+            
+            const data = await response.json();
+            
+            if (data.mbti) {
+                showResult(data);
+            } else if (data.error) {
+                alert('计算失败：' + data.error);
+                document.getElementById('btnArea').style.display = 'flex';
+            }
+        } catch (error) {
+            alert('网络错误，请稍后再试');
+            document.getElementById('btnArea').style.display = 'flex';
+        }
+    }
+    
+    function showResult(data) {
+        document.querySelectorAll('.question-container').forEach(q => {
+            q.style.display = 'none';
+        });
+        document.getElementById('progressWrapper').style.display = 'none';
+        document.getElementById('progressText').textContent = '测试完成！';
+        
+        const clubsHtml = data.recommended_clubs && data.recommended_clubs.length > 0 
+            ? `<div class="result-clubs">
+                <h4>💝 根据你的性格，推荐以下社团：</h4>
+                <div class="club-tags">
+                    ${data.recommended_clubs.map(c => `<span class="club-tag">${c.name}</span>`).join('')}
+                </div>
+               </div>`
+            : '';
+        
+        const suggestionsHtml = data.suggestions && data.suggestions.length > 0
+            ? `<div class="result-suggestions">
+                <h4>🎯 适合你的活动方向</h4>
+                <ul>
+                    ${data.suggestions.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+               </div>`
+            : '';
+        
+        document.getElementById('resultContainer').innerHTML = `
+            <div class="result-mbti">${data.mbti}</div>
+            <div class="result-name">${data.name}</div>
+            <div class="result-description">${data.description}</div>
+            ${suggestionsHtml}
+            ${clubsHtml}
+            <div class="result-actions">
+                <a href="/ai/" class="btn-primary">💬 与小C聊聊</a>
+                <a href="{% url 'index' %}" class="btn-secondary">🏠 浏览社团</a>
+                <a href="#" class="btn-secondary" onclick="restartTest(); return false;">🔄 重新测试</a>
+            </div>
+        `;
+        
+        document.getElementById('resultContainer').classList.add('active');
+    }
+    
+    function restartTest() {
+        currentQuestion = 1;
+        for (let key in answers) delete answers[key];
+        
+        document.getElementById('resultContainer').classList.remove('active');
+        document.getElementById('resultContainer').innerHTML = '';
+        document.getElementById('progressWrapper').style.display = 'none';
+        document.getElementById('mbtiForm').style.display = 'none';
+        document.getElementById('introSection').style.display = 'block';
+        document.getElementById('btnArea').style.display = 'flex';
+        document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

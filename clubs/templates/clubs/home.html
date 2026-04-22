@@ -1,0 +1,118 @@
+{% extends 'clubs/base.html' %}
+
+{% block title %}智枢青寰{% endblock %}
+
+{% block content %}
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">智枢-青寰</h1>
+        <p class="lead text-muted">高校社团智慧互动聚合平台</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- 活动宣传海报区 (左侧主视觉区) -->
+        <div class="col-lg-8">
+            <div id="eventCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for event in latest_events %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <a href="{% url 'event_detail' event.id %}">
+                                {% if event.poster %}
+                                    <img src="{{ event.poster.url }}" class="d-block w-100 rounded" alt="{{ event.title }}" style="height: 400px; object-fit: cover;">
+                                {% else %}
+                                    <div class="d-block w-100 bg-secondary rounded d-flex align-items-center justify-content-center" style="height: 400px;">
+                                        <h3 class="text-white">{{ event.title }}</h3>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            <div class="carousel-caption d-none d-md-block">
+                                <h5>{{ event.title }}</h5>
+                                <p>{{ event.partner_school }} · {{ event.start_date|date:'Y-m-d' }} - {{ event.end_date|date:'Y-m-d' }}</p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="carousel-item active">
+                            <div class="d-block w-100 bg-light rounded d-flex align-items-center justify-content-center" style="height: 400px;">
+                                <h3 class="text-muted">暂无活动海报</h3>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 右侧功能区 -->
+        <div class="col-lg-4">
+            <!-- 社团列表和校园活动卡片 -->
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <a href="{% url 'index' %}" class="text-decoration-none">
+                        <div class="card h-100 text-center border-primary">
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <div>
+                                    <div class="fs-1 mb-2">👥</div>
+                                    <h5 class="card-title mb-0">社团列表</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-12">
+                    <a href="{% url 'events_list' %}" class="text-decoration-none">
+                        <div class="card h-100 text-center border-success">
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <div>
+                                    <div class="fs-1 mb-2">🎉</div>
+                                    <h5 class="card-title mb-0">校园活动</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 智能助手与互动百科 -->
+            <div class="row g-3">
+                <div class="col-6">
+                    <a href="#" class="text-decoration-none">
+                        <div class="card h-100 text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">智能助手</h6>
+                                <p class="card-text small">AI驱动的问答与推荐</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="#" class="text-decoration-none">
+                        <div class="card h-100 text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">互动百科</h6>
+                                <p class="card-text small">校园活动与社团知识</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var carousel = document.getElementById('eventCarousel');
+    if (carousel) {
+        var carouselInstance = new bootstrap.Carousel(carousel, {
+            interval: 5000,
+            wrap: true
+        });
+    }
+</script>
+{% endblock %}
